@@ -6,24 +6,84 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Client extends UnicastRemoteObject implements ClientInterface  {
-    
+public final class Client extends UnicastRemoteObject implements ServerInterface  {
     private final int RMI_PORT = 1099;
     private Registry registry;
     private boolean isServer;
     private String username;
-    private ClientInterface server;
-    private HashMap<String, Queue<Message>> messages;
-    private Client right, left;
+    private ServerInterface server;
+    private HashMap<String, LinkedList<Message>> messages;
+    private HashSet<String> clients;
+    private Client neighbour;
+    private String uniqueID;
     
     public Client() throws RemoteException {
+        
         setupRegistry();
-        if(server == null)
-            getServer();
+        getServer();
+        generateID();
+        
+        if(isServer) {
+            messages = new HashMap<String, LinkedList<Message>>();
+            clients = new HashSet<>();
+            addClient(uniqueID);
+            neighbour = null;
+        } else {
+            server.addClient(uniqueID);
+        }
+        
+        LinkedList<Message> myMessages = new LinkedList<>();
+        messages.put(uniqueID, myMessages);
+    }
+    
+    public void sendMessage(String toUniqueID, Message message) {
+        if(messages.containsKey(toUniqueID)) {
+            messages.get(toUniqueID).add(message);
+        }
+    }
+    
+    public void generateID() {
+        uniqueID = UUID.randomUUID().toString();
+    }
+    
+    public String getUniqueID() {
+        return uniqueID;
+    }
+    
+    public void setNeighbour(Client neighbour) {
+        this.neighbour = neighbour;
+    }
+    
+    @Override
+    public void addClient(String uniqueID) throws RemoteException {
+        clients.add(uniqueID);
+        Client newClient = getClientByID(uniqueID);
+        if(clients.size() == 1)
+            neighbour = null;
+        else if (clients.size() == 2) {
+            newClient.setNeighbour(this);
+            neighbour = newClient;
+        } else {
+            newClient.setNeighbour(neighbour);
+            neighbour = newClient;
+        }
+    }
+    
+    public Client getClientByID(String uniqueID) throws RemoteException {
+        if(uniqueID.equals(this.uniqueID)) {
+            return this;
+        } else if(uniqueID.equals(server.getUniqueID())) {
+            return null;
+        } else {
+            return neighbour.getClientByID(uniqueID);
+        }
     }
     
     public void setupRegistry() throws RemoteException {
@@ -57,7 +117,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface  {
     
     public void getServer() {
         try {
-            server = (ClientInterface) registry.lookup("server");
+            server = (ServerInterface) registry.lookup("server");
         } catch (RemoteException | NotBoundException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -66,7 +126,6 @@ public class Client extends UnicastRemoteObject implements ClientInterface  {
     public void registerAsServer() {
         try {
             registry.rebind("server", this);
-            server = this;
         } catch (RemoteException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }

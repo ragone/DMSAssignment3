@@ -7,6 +7,8 @@ import java.awt.TextArea;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -25,7 +27,6 @@ public class ClientGUI extends JFrame {
     
     public ClientGUI() throws RemoteException {
         super("SnapHack");
-        client = new Client();
         
         // Setup JFrame
         setSize(800, 600);
@@ -45,6 +46,11 @@ public class ClientGUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String username = usernameTextField.getText();
+                try {
+                    client = new Client();
+                } catch (RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 client.setUsername(username);
                 logoutBtn.setEnabled(true);
                 joinBtn.setEnabled(false);

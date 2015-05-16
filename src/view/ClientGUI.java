@@ -12,18 +12,18 @@ import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import model.Client;
 
 public class ClientGUI extends JFrame {
     private Client client;
-    private JPanel loginPnl;
-    private JButton joinBtn;
-    private JButton logoutBtn;
-    private JTextField usernameTextField;
-    private JPanel mainPnl;
+    private JButton joinBtn, logoutBtn, sendMsgBtn, getMsgBtn;
+    private JTextField usernameTextField, messageTextField;
+    private JPanel mainPnl, loginPnl;
     private final TextArea mainTextArea;
+    private final JList clientsList;
     
     public ClientGUI() throws RemoteException {
         super("SnapHack");
@@ -34,7 +34,26 @@ public class ClientGUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
         // Setup buttons and textfield
-        loginPnl = new JPanel(new GridLayout(1, 3));
+        loginPnl = new JPanel(new GridLayout(2, 3));
+        
+        messageTextField = new JTextField();
+        messageTextField.setEnabled(false);
+        loginPnl.add(messageTextField);
+        
+        sendMsgBtn = new JButton("Send Message");
+        sendMsgBtn.setEnabled(false);
+        sendMsgBtn.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // client.getServer().sendMessage(null, null);
+            }
+        });
+        loginPnl.add(sendMsgBtn);
+        
+        getMsgBtn = new JButton("Get messages");
+        getMsgBtn.setEnabled(false);
+        loginPnl.add(getMsgBtn);
         
         usernameTextField = new JTextField();
         loginPnl.add(usernameTextField);
@@ -54,9 +73,18 @@ public class ClientGUI extends JFrame {
                 client.setUsername(username);
                 logoutBtn.setEnabled(true);
                 joinBtn.setEnabled(false);
+                sendMsgBtn.setEnabled(true);
+                messageTextField.setEnabled(true);
+                getMsgBtn.setEnabled(true);
                 usernameTextField.setEnabled(false);
                 mainTextArea.setEnabled(true);
                 mainTextArea.append(username + " joined the chat\n");
+                
+                try {
+                    clientsList.setListData(client.getServer().getClients());
+                } catch (RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
         loginPnl.add(joinBtn);
@@ -72,9 +100,19 @@ public class ClientGUI extends JFrame {
                 }
                 logoutBtn.setEnabled(false);
                 joinBtn.setEnabled(true);
+                sendMsgBtn.setEnabled(false);
+                messageTextField.setEnabled(false);
+                getMsgBtn.setEnabled(false);
                 usernameTextField.setEnabled(true);
                 mainTextArea.setEnabled(false);
                 mainTextArea.append(client.getUsername() + " left the chat\n");
+                clientsList.setListData(new Object[0]);
+                
+                try {
+                    client.getServer().removeClient(client);
+                } catch (RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
         logoutBtn.setEnabled(false);
@@ -82,9 +120,10 @@ public class ClientGUI extends JFrame {
         
         add(loginPnl, BorderLayout.SOUTH);
         
-        mainPnl = new JPanel(new GridLayout(1, 2));
+        mainPnl = new JPanel(new GridLayout(1, 2, 10, 10));
         
-        mainPnl.add(new JLabel(""));
+        clientsList = new JList();
+        mainPnl.add(clientsList);
         mainTextArea = new TextArea();
         mainTextArea.setEnabled(false);
         mainPnl.add(mainTextArea);

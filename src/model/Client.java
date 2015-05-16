@@ -7,21 +7,21 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class Client extends UnicastRemoteObject implements ServerInterface  {
+public final class Client extends UnicastRemoteObject implements RemoteObject  {
     private final int RMI_PORT = 1099;
     private Registry registry;
     private boolean isServer;
     private String username;
-    private ServerInterface server;
+    private RemoteObject server;
     private HashMap<String, LinkedList<Message>> messages;
-    private HashSet<String> clients;
-    private Client neighbour;
+    private HashSet<RemoteObject> clients;
+    private RemoteObject neighbour;
     private String uniqueID;
     
     public Client() throws RemoteException {
@@ -33,20 +33,24 @@ public final class Client extends UnicastRemoteObject implements ServerInterface
         if(isServer) {
             messages = new HashMap<String, LinkedList<Message>>();
             clients = new HashSet<>();
-            addClient(uniqueID);
-            neighbour = null;
-        } else {
-            server.addClient(uniqueID);
         }
         
-        LinkedList<Message> myMessages = new LinkedList<>();
-        messages.put(uniqueID, myMessages);
+        server.addClient(this);
     }
     
     public void sendMessage(String toUniqueID, Message message) {
         if(messages.containsKey(toUniqueID)) {
             messages.get(toUniqueID).add(message);
         }
+    }
+    
+    public String[] getClients() throws RemoteException {
+        String[] clientsArr = new String[clients.size()];
+        Iterator<RemoteObject> ita = clients.iterator();
+        for(int i = 0; i < clients.size(); i++) {
+            clientsArr[i] = ita.next().getUniqueID();
+        }
+        return clientsArr;
     }
     
     public void generateID() {
@@ -57,23 +61,29 @@ public final class Client extends UnicastRemoteObject implements ServerInterface
         return uniqueID;
     }
     
-    public void setNeighbour(Client neighbour) {
+    public void setNeighbour(RemoteObject neighbour) {
         this.neighbour = neighbour;
     }
     
     @Override
-    public void addClient(String uniqueID) throws RemoteException {
-        clients.add(uniqueID);
-        Client newClient = getClientByID(uniqueID);
+    public void addClient(RemoteObject client) throws RemoteException {
+        clients.add(client);
+        messages.put(client.getUniqueID(), new LinkedList<>());
         if(clients.size() == 1)
             neighbour = null;
         else if (clients.size() == 2) {
-            newClient.setNeighbour(this);
-            neighbour = newClient;
+            client.setNeighbour(this);
+            neighbour = client;
         } else {
-            newClient.setNeighbour(neighbour);
-            neighbour = newClient;
+            client.setNeighbour(neighbour);
+            neighbour = client;
         }
+    }
+    
+    public void removeClient(RemoteObject client) throws RemoteException {
+        clients.remove(client);
+        messages.remove(client.getUniqueID());
+        // TODO: fix neighbour allocation
     }
     
     public Client getClientByID(String uniqueID) throws RemoteException {
@@ -115,12 +125,13 @@ public final class Client extends UnicastRemoteObject implements ServerInterface
         this.isServer = b;
     }
     
-    public void getServer() {
+    public RemoteObject getServer() {
         try {
-            server = (ServerInterface) registry.lookup("server");
+            server = (RemoteObject) registry.lookup("server");
         } catch (RemoteException | NotBoundException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            // none
         }
+        return server;
     }
     
     public void registerAsServer() {

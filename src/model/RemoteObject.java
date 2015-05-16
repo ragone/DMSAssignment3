@@ -3,6 +3,7 @@ package model;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.LinkedList;
 
 
 public interface RemoteObject extends Remote {
@@ -10,7 +11,8 @@ public interface RemoteObject extends Remote {
     public void removeClient(RemoteObject client) throws RemoteException;
     public String getUniqueID() throws RemoteException;
     public Client getClientByID(String uniqueID) throws RemoteException;
-    public void sendMessage(String toUniqueID, Message message) throws RemoteException;
+    public void sendMessage(Message message) throws RemoteException;
+    public Message getLastMessage(String uniqueID) throws RemoteException;
     public void setNeighbour(RemoteObject neighbour) throws RemoteException;
     public String[] getClients() throws RemoteException;
 }

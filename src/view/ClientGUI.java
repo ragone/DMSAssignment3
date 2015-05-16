@@ -16,6 +16,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import model.Client;
+import model.Message;
 
 public class ClientGUI extends JFrame {
     private Client client;
@@ -80,7 +81,12 @@ public class ClientGUI extends JFrame {
                 getMsgBtn.setEnabled(true);
                 usernameTextField.setEnabled(false);
                 getMainTextArea().setEnabled(true);
-                getMainTextArea().append(username + " joined the chat\n");
+                Message msg = new Message(username + " joined the chat\n", Message.BROADCAST);
+                try {
+                    client.getServer().sendMessage(msg);
+                } catch (RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 
                 ClientThread clientThread = new ClientThread(client, gui);
                 t = new Thread(clientThread);

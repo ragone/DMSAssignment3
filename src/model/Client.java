@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,9 +39,12 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         server.addClient(this);
     }
     
-    public void sendMessage(String toUniqueID, Message message) {
-        if(messages.containsKey(toUniqueID)) {
-            messages.get(toUniqueID).add(message);
+    public void sendMessage(Message message) {
+        if(message.getType() == Message.BROADCAST) {
+            for (Map.Entry<String, LinkedList<Message>> entrySet : messages.entrySet()) {
+                LinkedList<Message> value = entrySet.getValue();
+                value.push(message);
+            }
         }
     }
     
@@ -144,5 +148,13 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
 
     public static void main(String[] args) throws RemoteException {
         new Client();
+    }
+
+    @Override
+    public Message getLastMessage(String uniqueID) throws RemoteException {
+        if(!messages.get(uniqueID).isEmpty())
+            return messages.get(uniqueID).pop();
+        else 
+            return null;
     }
 }

@@ -19,11 +19,13 @@ import model.Client;
 
 public class ClientGUI extends JFrame {
     private Client client;
+    private ClientGUI gui = this;
     private JButton joinBtn, logoutBtn, sendMsgBtn, getMsgBtn;
     private JTextField usernameTextField, messageTextField;
     private JPanel mainPnl, loginPnl;
     private final TextArea mainTextArea;
     private final JList clientsList;
+    private Thread t;
     
     public ClientGUI() throws RemoteException {
         super("SnapHack");
@@ -77,14 +79,12 @@ public class ClientGUI extends JFrame {
                 messageTextField.setEnabled(true);
                 getMsgBtn.setEnabled(true);
                 usernameTextField.setEnabled(false);
-                mainTextArea.setEnabled(true);
-                mainTextArea.append(username + " joined the chat\n");
+                getMainTextArea().setEnabled(true);
+                getMainTextArea().append(username + " joined the chat\n");
                 
-                try {
-                    clientsList.setListData(client.getServer().getClients());
-                } catch (RemoteException ex) {
-                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                ClientThread clientThread = new ClientThread(client, gui);
+                t = new Thread(clientThread);
+                t.start();
             }
         });
         loginPnl.add(joinBtn);
@@ -104,10 +104,10 @@ public class ClientGUI extends JFrame {
                 messageTextField.setEnabled(false);
                 getMsgBtn.setEnabled(false);
                 usernameTextField.setEnabled(true);
-                mainTextArea.setEnabled(false);
-                mainTextArea.append(client.getUsername() + " left the chat\n");
+                getMainTextArea().setEnabled(false);
+                getMainTextArea().append(client.getUsername() + " left the chat\n");
+                t.interrupt();
                 clientsList.setListData(new Object[0]);
-                
                 try {
                     client.getServer().removeClient(client);
                 } catch (RemoteException ex) {
@@ -135,5 +135,19 @@ public class ClientGUI extends JFrame {
     
     public static void main(String[] args) throws RemoteException {
         new ClientGUI();
+    }
+
+    /**
+     * @return the clientsList
+     */
+    public JList getClientsList() {
+        return clientsList;
+    }
+
+    /**
+     * @return the mainTextArea
+     */
+    public TextArea getMainTextArea() {
+        return mainTextArea;
     }
 }

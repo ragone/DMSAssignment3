@@ -81,7 +81,7 @@ public class ClientGUI extends JFrame {
                 getMsgBtn.setEnabled(true);
                 usernameTextField.setEnabled(false);
                 getMainTextArea().setEnabled(true);
-                Message msg = new Message(username + " joined the chat\n", Message.BROADCAST);
+                Message msg = new Message(client.getUniqueID(), username + " joined the chat\n", Message.BROADCAST);
                 try {
                     client.getServer().sendMessage(msg);
                 } catch (RemoteException ex) {

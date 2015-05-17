@@ -6,6 +6,13 @@ import java.util.logging.Logger;
 import model.Client;
 import model.Message;
 
+/**
+ * Represents a new Client process running on a separate thread on the system.
+ * @author Alex
+ * @modified jaimes 20150517 Moved Chang-Roberts leader election logic here.
+ * @TODO Need Clients logical Ring implemented to complete Chang-Robert leader
+ * election algorithm.
+ */
 public class ClientThread implements Runnable {
     private final ClientGUI gui;
     private final Client model;

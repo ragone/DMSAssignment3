@@ -23,13 +23,20 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     private HashMap<String, LinkedList<Message>> messages;
     private HashSet<RemoteObject> clients;
     private RemoteObject neighbour;
-    private String uniqueID;
+    private String uniqueID; // The client's unique identifier (UUID).
+    
+    // Chang-Roberts data
+    boolean participant; // Whether this client is participating in an election
+    String leaderID; // The current leader's (server) unique identifier (UUID).
     
     public Client() throws RemoteException {
+        
+        participant = false; // Defaults to not participating in a leader election
         
         setupRegistry();
         getServer();
         generateID();
+
         
         if(isServer) {
             messages = new HashMap<String, LinkedList<Message>>();
@@ -37,6 +44,8 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
         
         server.addClient(this);
+        
+        leaderID = server.getUniqueID();
     }
     
     public void sendMessage(Message message) {
@@ -146,15 +155,61 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
     }
 
-    public static void main(String[] args) throws RemoteException {
-        new Client();
-    }
-
+    /**
+     * Gets the latest message sent to this Client.
+     * @param uniqueID The unique ID of this Client.
+     * @return The latest message sent to this Client or null if none.
+     * @throws RemoteException Error if RMI Server unavailable.
+     */
     @Override
     public Message getLastMessage(String uniqueID) throws RemoteException {
         if(!messages.get(uniqueID).isEmpty())
-            return messages.get(uniqueID).pop();
-        else 
+        {
+            return messages.get(uniqueID).pop();          
+        }
+        else
+        {
             return null;
+        }
+    }
+
+    /**
+     * Gets the election participant boolean of this Client.
+     * @return Is election participant true or false.
+     */
+    public boolean isParticipant()
+    {
+        return participant;
+    }
+
+    /**
+     * Sets the election participant boolean value.
+     * @param isParticipant Has this Client participated in an election true or false
+     */
+    public void setParticipant(boolean isParticipant)
+    {
+        this.participant = isParticipant;
+    }
+
+    /**
+     * Gets the unique ID (UUID) of the leader (Server) of this Client.
+     * @return the unique ID (UUID) String of the leader (Server)
+     */
+    public String getLeaderID()
+    {
+        return leaderID;
+    }
+
+    /**
+     * Sets the unique ID (UUID) of the leader (Server) of this Client.
+     * @param leaderID This Client's Server UUID 
+     */
+    public void setLeaderID(String leaderID)
+    {
+        this.leaderID = leaderID;
+    }
+    
+    public static void main(String[] args) throws RemoteException {
+        new Client();
     }
 }

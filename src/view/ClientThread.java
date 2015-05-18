@@ -10,8 +10,8 @@ import model.Message;
  * Represents a new Client process running on a separate thread on the system.
  * @author Alex
  * @modified jaimes 20150517 Moved Chang-Roberts leader election logic here.
- * @TODO Need Clients logical Ring implemented to complete Chang-Robert leader
- * election algorithm.
+ * @modified jaimes 20150518 Completed Chang-Roberts leader election algorithm.
+ * @TODO Need to handle null neighbours?
  */
 public class ClientThread implements Runnable {
     private final ClientGUI gui;
@@ -40,41 +40,50 @@ public class ClientThread implements Runnable {
                         // Election in progress so vote
 
                         // Identify UUID of client sending election message
-                        String messageID = message.getSenderID();
+                        String senderID = message.getSenderID();
 
                         // Check if messageID > ownID
                         // String compareTo returns positive integer if this String object 
                         // lexicographically follows the argument string 
-                        if (messageID.compareTo(model.getUniqueID()) > 0)
+                        if (senderID.compareTo(model.getUniqueID()) > 0)
                         {
-                            // Vote for other client
-                            
+                            // Vote for sending client                  
                             model.setParticipant(true); // This Client has now participated in the election
-                            // @TODO Send election message with messageID to next process
+                            
+                            //Send election message (containing messageID ie. the sender's ID) to the next Client
+                            // @TODO handle if the Client's neighbour is null?
+                            // might not be neccessary as election would not be needed for only one Client
+                            model.getNeighbour().sendMessage(message);
                         }
                         // Check if messageID = ownID
                         // String compareTo returns zero if the strings are equal 
-                        else if (messageID.compareTo(model.getUniqueID()) == 0)
+                        else if (senderID.compareTo(model.getUniqueID()) == 0)
                         {
                             // This client elected leader
-                            // @TODO Send leader message with ownID to next client in ring
+                            // Send leader message with ownID to next client in ring
+                            senderID = model.getUniqueID();
+                            Message leaderMessage = new Message(senderID,
+                                    "Leader message from" + senderID, Message.LEADER);
+                            model.getNeighbour().sendMessage(leaderMessage);
+                            // @TODO handle if the Client's neighbour is null?
 
                         }
                         // Check if messageID < ownID
                         // String compareTo returns negative int if this String object 
                         // lexicographically precedes the argument string 
-                        else if (messageID.compareTo(model.getUniqueID()) < 0)
+                        else if (senderID.compareTo(model.getUniqueID()) < 0)
                         {
-                            // This client is better
+                            // This client is a better leader
+                            
+                            // If this Client hasn't participated in election
                             if (model.isParticipant() == false)
                             {
+                                // Send election message requesting this Client
+                                // as leader.
                                 changRobertsStartElection();
                             }
-                            else
-                            {
-                                // dont forward message as already voted for better
-                                // leader
-                            }
+                            // Otherwise, dont forward message as already voted 
+                            // for better leader
                         }
                     }
                     else if (message.getType() == Message.LEADER)
@@ -87,7 +96,9 @@ public class ClientThread implements Runnable {
 
                         if (model.getLeaderID().equals(model.getUniqueID()))
                         {
-                            // @TODO Send leader message with leader ID to next client in ring
+                            // Send leader message (with leader ID) to next client in ring
+                            model.getNeighbour().sendMessage(message);
+                            // @TODO handle if the Client's neighbour is null?
                         }
                     }
                     else
@@ -106,14 +117,17 @@ public class ClientThread implements Runnable {
     
     /**
      * Starts the Chang-Roberts leader election process for this Client.
+     * @throws java.rmi.RemoteException
      */
-    public void changRobertsStartElection()
+    public void changRobertsStartElection() throws RemoteException
     {
         model.setParticipant(true);
 
         Message electionMessage = new Message(model.getUniqueID(), "request vote for " 
-                + model.getUniqueID() , 2);
+                + model.getUniqueID() , Message.ELECTION);
         
-        // @TODO Send election message with own ID to next process in ring system
+        // Send election message with own ID to next process in ring system
+        model.getNeighbour().sendMessage(electionMessage);
+        // @TODO handle if the Client's neighbour is null?
     }
 }

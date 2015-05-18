@@ -73,32 +73,65 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     public String getUniqueID() {
         return uniqueID;
     }
+
+    /**
+     * Gets this Clients neighbour.
+     * @return The remote object representing this Client's neighbour
+     */
+    public RemoteObject getNeighbour()
+    {
+        return neighbour;
+    }
     
     public void setNeighbour(RemoteObject neighbour) {
         this.neighbour = neighbour;
     }
     
+    /**
+     * Adds the specified Client to the set of Clients, adds an entry 
+     * for the specified Client in the messages hashmap and sets the neighbour of
+     * the specified client, forming a logical Ring topography of Clients.
+     * @param newClient The Client to add to the set of Clients.
+     * @throws RemoteException If there is an error accessing the Client Object
+     */
     @Override
-    public void addClient(RemoteObject client) throws RemoteException {
-        clients.add(client);
-        messages.put(client.getUniqueID(), new LinkedList<>());
+    public void addClient(RemoteObject newClient) throws RemoteException {
+        // Add the specified Client to the Set of Clients.
+        clients.add(newClient);
+        
+        // Add entry for the specified Client
+        messages.put(newClient.getUniqueID(), new LinkedList<>());
+        
+        // Check if this new client is the only one in the set
         if(clients.size() == 1)
+            // Only one Client in set, so no neighbour
             neighbour = null;
+        // Check if the new Client is the second in the set
+        // i.e. a small Ring, where each Client is a neighbour of the other.
         else if (clients.size() == 2) {
-            client.setNeighbour(this);
-            neighbour = client;
-        } else {
-            client.setNeighbour(neighbour);
-            neighbour = client;
+            // Make this Client the neighbour of the new Client
+            newClient.setNeighbour(this);
+            // Set the new Client as this Clients neighbour
+            neighbour = newClient;
+        }
+        // Otherwise new client is being added to an exisiting ring
+        // Insert the new Client next to this Client
+        else {
+            // Make the neighbour of this Client the neighbour of the new Client.
+            newClient.setNeighbour(neighbour);
+            // Make this new Client this Client's neighbour
+            neighbour = newClient;
         }
     }
     
+    @Override
     public void removeClient(RemoteObject client) throws RemoteException {
         clients.remove(client);
         messages.remove(client.getUniqueID());
         // TODO: fix neighbour allocation
     }
     
+    @Override
     public Client getClientByID(String uniqueID) throws RemoteException {
         if(uniqueID.equals(this.uniqueID)) {
             return this;
@@ -208,7 +241,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     {
         this.leaderID = leaderID;
     }
-    
+   
     public static void main(String[] args) throws RemoteException {
         new Client();
     }

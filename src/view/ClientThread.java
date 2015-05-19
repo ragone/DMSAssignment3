@@ -24,7 +24,7 @@ public class ClientThread implements Runnable {
                 gui.getClientsList().setListData(model.getServer().getClients());
                 Message message = model.getServer().getLastMessage(model.getUniqueID());
                 if(message != null) {
-                    gui.getMainTextArea().append(message.getContent());
+                    gui.getMainTextArea().append(message.getTime() + message.getContent());
                 }
             } catch (RemoteException ex) {
                 Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);

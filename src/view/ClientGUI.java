@@ -11,7 +11,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -27,6 +26,7 @@ public class ClientGUI extends JFrame {
     private final TextArea mainTextArea;
     private final JList clientsList;
     private Thread t;
+    private ClientThread clientThread;
     
     public ClientGUI() throws RemoteException {
         super("SnapHack");
@@ -88,7 +88,7 @@ public class ClientGUI extends JFrame {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 
-                ClientThread clientThread = new ClientThread(client, gui);
+                clientThread = new ClientThread(client, gui);
                 t = new Thread(clientThread);
                 t.start();
             }
@@ -111,7 +111,12 @@ public class ClientGUI extends JFrame {
                 getMsgBtn.setEnabled(false);
                 usernameTextField.setEnabled(true);
                 getMainTextArea().setEnabled(false);
-                getMainTextArea().append(client.getUsername() + " left the chat\n");
+                Message msg = new Message(client.getUsername() + " left the chat\n", Message.BROADCAST);
+                try {
+                    client.getServer().sendMessage(msg);
+                } catch (RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 t.interrupt();
                 clientsList.setListData(new Object[0]);
                 try {
@@ -119,6 +124,9 @@ public class ClientGUI extends JFrame {
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
+                clientThread = null;
+                client = null;
+                t.interrupt();
             }
         });
         logoutBtn.setEnabled(false);

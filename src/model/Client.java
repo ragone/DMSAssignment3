@@ -52,7 +52,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         String[] clientsArr = new String[clients.size()];
         Iterator<RemoteObject> ita = clients.iterator();
         for(int i = 0; i < clients.size(); i++) {
-            clientsArr[i] = ita.next().getUniqueID();
+            clientsArr[i] = ita.next().getUsername();
         }
         return clientsArr;
     }
@@ -79,7 +79,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
             client.setNeighbour(this);
             neighbour = client;
         } else {
-            client.setNeighbour(neighbour);
+            client.setNeighbour(getNeighbour());
             neighbour = client;
         }
     }
@@ -88,6 +88,15 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         clients.remove(client);
         messages.remove(client.getUniqueID());
         // TODO: fix neighbour allocation
+        if(clients.size() == 1) {
+            neighbour = null;
+        } else {
+            for(RemoteObject otherClient : clients) {
+                if(otherClient.getNeighbour() == client) {
+                    otherClient.setNeighbour(client.getNeighbour());
+                }
+            }
+        }
     }
     
     public Client getClientByID(String uniqueID) throws RemoteException {
@@ -96,7 +105,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         } else if(uniqueID.equals(server.getUniqueID())) {
             return null;
         } else {
-            return neighbour.getClientByID(uniqueID);
+            return getNeighbour().getClientByID(uniqueID);
         }
     }
     
@@ -152,9 +161,14 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
 
     @Override
     public Message getLastMessage(String uniqueID) throws RemoteException {
-        if(!messages.get(uniqueID).isEmpty())
+        if(messages.containsKey(uniqueID) && !messages.get(uniqueID).isEmpty())
             return messages.get(uniqueID).pop();
         else 
             return null;
+    }
+
+    @Override
+    public RemoteObject getNeighbour() throws RemoteException {
+        return neighbour;
     }
 }

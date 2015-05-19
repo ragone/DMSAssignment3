@@ -15,4 +15,6 @@ public interface RemoteObject extends Remote {
     public Message getLastMessage(String uniqueID) throws RemoteException;
     public void setNeighbour(RemoteObject neighbour) throws RemoteException;
     public String[] getClients() throws RemoteException;
+    public RemoteObject getNeighbour() throws RemoteException;
+    public String getUsername() throws RemoteException;
 }

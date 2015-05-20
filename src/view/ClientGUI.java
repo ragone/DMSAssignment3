@@ -1,6 +1,5 @@
 package view;
 
-
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.TextArea;
@@ -14,10 +13,14 @@ import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import model.Client;
 import model.Message;
 
 public class ClientGUI extends JFrame {
+
     private Client client;
     private ClientGUI gui = this;
     private JButton joinBtn, logoutBtn, sendMsgBtn, getMsgBtn;
@@ -27,40 +30,54 @@ public class ClientGUI extends JFrame {
     private final JList clientsList;
     private Thread t;
     private ClientThread clientThread;
-    
+    private String selection;
+
     public ClientGUI() throws RemoteException {
         super("SnapHack");
+
+        try {
+            client = new Client();
+        } catch (RemoteException ex) {
+            Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
+        clientThread = new ClientThread(client, gui);
+        new Thread(clientThread).start();
+
         // Setup JFrame
         setSize(800, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
+
         // Setup buttons and textfield
         loginPnl = new JPanel(new GridLayout(2, 3));
-        
+
         messageTextField = new JTextField();
         messageTextField.setEnabled(false);
         loginPnl.add(messageTextField);
-        
+
         sendMsgBtn = new JButton("Send Message");
         sendMsgBtn.setEnabled(false);
         sendMsgBtn.addActionListener(new ActionListener() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                // client.getServer().sendMessage(null, null);
+                try {
+                    client.getServer().sendMessage(new Message(messageTextField.getText(), clientsList.getSelectedValuesList()));
+                } catch (RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
         loginPnl.add(sendMsgBtn);
-        
+
         getMsgBtn = new JButton("Get messages");
         getMsgBtn.setEnabled(false);
         loginPnl.add(getMsgBtn);
-        
+
         usernameTextField = new JTextField();
         loginPnl.add(usernameTextField);
-        
+
         // Login button
         joinBtn = new JButton("Join");
         joinBtn.addActionListener(new ActionListener() {
@@ -68,11 +85,6 @@ public class ClientGUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String username = usernameTextField.getText();
-                try {
-                    client = new Client();
-                } catch (RemoteException ex) {
-                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-                }
                 client.setUsername(username);
                 logoutBtn.setEnabled(true);
                 joinBtn.setEnabled(false);
@@ -81,27 +93,24 @@ public class ClientGUI extends JFrame {
                 getMsgBtn.setEnabled(true);
                 usernameTextField.setEnabled(false);
                 getMainTextArea().setEnabled(true);
-                Message msg = new Message(username + " joined the chat\n", Message.BROADCAST);
+                Message msg = new Message(username + " joined the chat", Message.BROADCAST);
                 try {
                     client.getServer().sendMessage(msg);
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                
-                clientThread = new ClientThread(client, gui);
-                t = new Thread(clientThread);
-                t.start();
+
             }
         });
         loginPnl.add(joinBtn);
-        
+
         // Logout button
         logoutBtn = new JButton("Logout");
         logoutBtn.addActionListener(new ActionListener() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(client.isServer()) {
+                if (client.isServer()) {
                     // startLeaderElection();
                 }
                 logoutBtn.setEnabled(false);
@@ -111,42 +120,38 @@ public class ClientGUI extends JFrame {
                 getMsgBtn.setEnabled(false);
                 usernameTextField.setEnabled(true);
                 getMainTextArea().setEnabled(false);
-                Message msg = new Message(client.getUsername() + " left the chat\n", Message.BROADCAST);
+                Message msg = new Message(client.getUsername() + " left the chat", Message.BROADCAST);
                 try {
                     client.getServer().sendMessage(msg);
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                t.interrupt();
                 clientsList.setListData(new Object[0]);
                 try {
                     client.getServer().removeClient(client);
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                clientThread = null;
-                client = null;
-                t.interrupt();
             }
         });
         logoutBtn.setEnabled(false);
         loginPnl.add(logoutBtn);
-        
+
         add(loginPnl, BorderLayout.SOUTH);
-        
+
         mainPnl = new JPanel(new GridLayout(1, 2, 10, 10));
-        
+
         clientsList = new JList();
         mainPnl.add(clientsList);
         mainTextArea = new TextArea();
         mainTextArea.setEnabled(false);
         mainPnl.add(mainTextArea);
-        
+
         add(mainPnl, BorderLayout.CENTER);
-        
+
         setVisible(true);
     }
-    
+
     public static void main(String[] args) throws RemoteException {
         new ClientGUI();
     }

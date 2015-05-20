@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -45,6 +46,16 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
                 LinkedList<Message> value = entrySet.getValue();
                 value.push(message);
             }
+        } else if(message.getType() == Message.PRIVATE_MESSAGE) {
+            List receivers = message.getReceivers();
+            for (Map.Entry<String, LinkedList<Message>> entrySet : messages.entrySet()) {
+                for(Object obj : receivers) {
+                    String receiver = (String) obj;
+                    if(entrySet.getKey().equals(receiver)) {
+                        messages.get(entrySet.getKey()).push(message);
+                    }
+                }
+            }
         }
     }
     
@@ -52,7 +63,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         String[] clientsArr = new String[clients.size()];
         Iterator<RemoteObject> ita = clients.iterator();
         for(int i = 0; i < clients.size(); i++) {
-            clientsArr[i] = ita.next().getUsername();
+            clientsArr[i] = ita.next().getUniqueID();
         }
         return clientsArr;
     }

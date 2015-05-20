@@ -63,7 +63,8 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         String[] clientsArr = new String[clients.size()];
         Iterator<RemoteObject> ita = clients.iterator();
         for(int i = 0; i < clients.size(); i++) {
-            clientsArr[i] = ita.next().getUniqueID();
+            RemoteObject nextClient = ita.next();
+            clientsArr[i] = nextClient.getUniqueID();
         }
         return clientsArr;
     }

@@ -30,12 +30,14 @@ public class ClientThread implements Runnable {
             if (client.getUsername() != null) {
                 try {
                     int[] i = gui.getClientsList().getSelectedIndices();
-                    gui.getClientsList().setListData(client.getServer().getClients());
+                    String[] clients = client.getServer().getClients();
+                    gui.getClientsList().setListData(clients);
                     gui.getClientsList().setSelectedIndices(i);
                     
                     Message message = client.getServer().getLastMessage(client.getUniqueID());
                     if (message != null) {
-                        gui.getMainTextArea().append(message.getTime() + message.getContent() + "\n");
+                        Client sender = client.getServer().getClientByID(message.getSender());
+                        gui.getMainTextArea().append(message.getTime() + sender.getUsername() + ": " + message.getContent() + "\n");
                     }
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);

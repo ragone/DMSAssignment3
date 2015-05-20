@@ -16,11 +16,13 @@ public class Message implements Serializable {
     private String content;
     private String timestamp;
     private List receivers;
+    private String sender;
     
     
 
-    public Message(String message, int type) {
+    public Message(String message, int type, String sender) {
         content = message;
+        this.sender = sender;
         this.type = type;
         
         DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
@@ -28,8 +30,9 @@ public class Message implements Serializable {
         timestamp = dateFormat.format(date);
     }
     
-    public Message(String message, List receivers) {
+    public Message(String message, List receivers, String sender) {
         content = message;
+        this.sender = sender;
         this.type = Message.PRIVATE_MESSAGE;
         this.receivers = receivers;
         
@@ -40,6 +43,10 @@ public class Message implements Serializable {
     
     public String getContent() {
         return content;
+    }
+    
+    public String print() {
+        return getTime() + content;
     }
 
     /**
@@ -58,5 +65,12 @@ public class Message implements Serializable {
      */
     public List getReceivers() {
         return receivers;
+    }
+
+    /**
+     * @return the sender
+     */
+    public String getSender() {
+        return sender;
     }
 }

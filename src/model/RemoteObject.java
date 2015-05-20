@@ -17,4 +17,5 @@ public interface RemoteObject extends Remote {
     public String[] getClients() throws RemoteException;
     public RemoteObject getNeighbour() throws RemoteException;
     public String getUsername() throws RemoteException;
+    public boolean isServer() throws RemoteException;
 }

@@ -11,7 +11,10 @@ import model.Message;
  * @author Alex
  * @modified jaimes 20150517 Moved Chang-Roberts leader election logic here.
  * @modified jaimes 20150518 Completed Chang-Roberts leader election algorithm.
+ * @modified jaimes 20150520 Refactored Chang-Roberts leader election algorithm to
+ * post messages to neighbours.
  * @TODO Need to handle null neighbours?
+ * @TODO Move Chang-Roberts receive message logic to model
  */
 public class ClientThread implements Runnable {
     private final ClientGUI gui;
@@ -34,7 +37,7 @@ public class ClientThread implements Runnable {
                 gui.getClientsList().setListData(model.getServer().getClients());
                 Message message = model.getServer().getLastMessage(model.getUniqueID());
                 if (message != null)
-                {
+                {           
                     if (message.getType() == Message.ELECTION)
                     {
                         // Election in progress so vote
@@ -50,10 +53,17 @@ public class ClientThread implements Runnable {
                             // Vote for sending client                  
                             model.setParticipant(true); // This Client has now participated in the election
                             
+                            // Get neighbours UUID i.e. receiver's ID
+                            String receiverID = model.getNeighbour().getUniqueID();
+                            
+                            // Add neighbour as receiver for this message
+                            message.setReceiverID(receiverID);
+                            
                             //Send election message (containing messageID ie. the sender's ID) to the next Client
+                            model.postMessage(message);
+                            
                             // @TODO handle if the Client's neighbour is null?
                             // might not be neccessary as election would not be needed for only one Client
-                            model.getNeighbour().sendMessage(message);
                         }
                         // Check if messageID = ownID
                         // String compareTo returns zero if the strings are equal 
@@ -61,10 +71,14 @@ public class ClientThread implements Runnable {
                         {
                             // This client elected leader
                             // Send leader message with ownID to next client in ring
-                            senderID = model.getUniqueID();
-                            Message leaderMessage = new Message(senderID,
+                            String newSenderID = model.getUniqueID();
+                            
+                            // Get neighbours UUID i.e. receiver's ID
+                            String receiverID = model.getNeighbour().getUniqueID();
+                            
+                            Message leaderMessage = new Message(newSenderID, receiverID,
                                     "Leader message from" + senderID, Message.LEADER);
-                            model.getNeighbour().sendMessage(leaderMessage);
+                            model.postMessage(leaderMessage);
                             // @TODO handle if the Client's neighbour is null?
 
                         }
@@ -96,8 +110,14 @@ public class ClientThread implements Runnable {
 
                         if (model.getLeaderID().equals(model.getUniqueID()))
                         {
-                            // Send leader message (with leader ID) to next client in ring
-                            model.getNeighbour().sendMessage(message);
+                            // Get neighbours UUID i.e. receiver's ID
+                            String receiverID = model.getNeighbour().getUniqueID();
+                            
+                            // Re-address message to next client in ring
+                            message.setReceiverID(receiverID);
+                            
+                            // Post leader message (with leader ID) to next client in ring
+                            model.postMessage(message);
                             // @TODO handle if the Client's neighbour is null?
                         }
                     }
@@ -122,12 +142,15 @@ public class ClientThread implements Runnable {
     public void changRobertsStartElection() throws RemoteException
     {
         model.setParticipant(true);
+        
+        // Get the neighbour of this Client
+        String receiverID = model.getNeighbour().getUniqueID();
 
-        Message electionMessage = new Message(model.getUniqueID(), "request vote for " 
+        Message electionMessage = new Message(model.getUniqueID(), receiverID, "request vote for " 
                 + model.getUniqueID() , Message.ELECTION);
         
-        // Send election message with own ID to next process in ring system
-        model.getNeighbour().sendMessage(electionMessage);
+        // Post election message with own ID to next process in ring system
+        model.postMessage(electionMessage);
         // @TODO handle if the Client's neighbour is null?
     }
 }

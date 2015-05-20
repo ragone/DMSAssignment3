@@ -14,6 +14,14 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Represents a Client object in the distributed messaging system.
+ * @author Alex
+ * @modified jaimes 20150520
+ * Refactored sendMessage() to postMessage(). Modified postMessage to handle 
+ * ELECTION and LEADER messages.
+ * @TODO Trigger Leader Election algorithm when Server needs to be chosen
+ */
 public final class Client extends UnicastRemoteObject implements RemoteObject  {
     private final int RMI_PORT = 1099;
     private Registry registry;
@@ -25,7 +33,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     private RemoteObject neighbour;
     private String uniqueID; // The client's unique identifier (UUID).
     
-    // Chang-Roberts data
+    // For Chang-Roberts data
     boolean participant; // Whether this client is participating in an election
     String leaderID; // The current leader's (server) unique identifier (UUID).
     
@@ -48,12 +56,32 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         leaderID = server.getUniqueID();
     }
     
-    public void sendMessage(Message message) {
-        if(message.getType() == Message.BROADCAST) {
-            for (Map.Entry<String, LinkedList<Message>> entrySet : messages.entrySet()) {
+    /**
+     * Posts messages from this Client to the message list of the Client specified
+     * in the message. BROADCAST messages are posted to all Clients in the system.
+     * @param message The message object to post 
+     */
+    @Override
+    public void postMessage(Message message)
+    {
+        // If a broadcast message post message to all Clients mailboxes
+        if (message.getType() == Message.BROADCAST)
+        {
+            for (Map.Entry<String, LinkedList<Message>> entrySet : messages.entrySet())
+            {
                 LinkedList<Message> value = entrySet.getValue();
                 value.push(message);
-            }
+            }      
+        }
+        // Otherwise ELECTION or LEADER message, so post message to 
+        // adressees (i.e. neighbours) mailbox
+        else if (message.getType() == Message.ELECTION || message.getType() == Message.LEADER)
+        {         
+            // Who is the message addressed to?
+            String receiverID = message.getReceiverID();
+            
+            // Add the message to the adressee's mailbox
+            messages.get(receiverID).push(message);   
         }
     }
     

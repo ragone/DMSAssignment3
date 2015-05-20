@@ -7,6 +7,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JList;
 import model.Client;
 import model.Message;
+import model.RemoteObject;
 
 public class ClientThread implements Runnable {
 
@@ -36,7 +37,7 @@ public class ClientThread implements Runnable {
                     
                     Message message = client.getServer().getLastMessage(client.getUniqueID());
                     if (message != null) {
-                        Client sender = client.getServer().getClientByID(message.getSender());
+                        RemoteObject sender = client.getServer().getClientByID(message.getSender());
                         gui.getMainTextArea().append(message.getTime() + sender.getUsername() + ": " + message.getContent() + "\n");
                     }
                 } catch (RemoteException ex) {

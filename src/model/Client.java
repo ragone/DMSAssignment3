@@ -111,7 +111,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
     }
     
-    public Client getClientByID(String uniqueID) throws RemoteException {
+    public RemoteObject getClientByID(String uniqueID) throws RemoteException {
         if(uniqueID.equals(this.uniqueID)) {
             return this;
         } else if(uniqueID.equals(server.getUniqueID())) {

@@ -35,19 +35,16 @@ public class ClientGUI extends JFrame {
     public ClientGUI() throws RemoteException {
         super("SnapHack");
 
+        // Setup JFrame
+        setSize(800, 600);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
         try {
             client = new Client();
         } catch (RemoteException ex) {
             Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        clientThread = new ClientThread(client, gui);
-        new Thread(clientThread).start();
-
-        // Setup JFrame
-        setSize(800, 600);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // Setup buttons and textfield
         loginPnl = new JPanel(new GridLayout(2, 3));
@@ -150,6 +147,9 @@ public class ClientGUI extends JFrame {
         add(mainPnl, BorderLayout.CENTER);
 
         setVisible(true);
+
+        clientThread = new ClientThread(client, gui);
+        new Thread(clientThread).start();
     }
 
     public static void main(String[] args) throws RemoteException {

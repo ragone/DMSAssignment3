@@ -10,7 +10,7 @@ public interface RemoteObject extends Remote {
     public void addClient(RemoteObject client) throws RemoteException;
     public void removeClient(RemoteObject client) throws RemoteException;
     public String getUniqueID() throws RemoteException;
-    public Client getClientByID(String uniqueID) throws RemoteException;
+    public RemoteObject getClientByID(String uniqueID) throws RemoteException;
     public void sendMessage(Message message) throws RemoteException;
     public Message getLastMessage(String uniqueID) throws RemoteException;
     public void setNeighbour(RemoteObject neighbour) throws RemoteException;

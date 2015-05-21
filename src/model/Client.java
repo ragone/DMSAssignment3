@@ -36,8 +36,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
             messages = new HashMap<String, LinkedList<Message>>();
             clients = new HashSet<>();
         }
-        
-        server.addClient(this);
     }
     
     public void sendMessage(Message message) {
@@ -99,9 +97,8 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     public void removeClient(RemoteObject client) throws RemoteException {
         clients.remove(client);
         messages.remove(client.getUniqueID());
-        // TODO: fix neighbour allocation
         if(clients.size() == 1) {
-            neighbour = null;
+            server.setNeighbour(null);
         } else {
             for(RemoteObject otherClient : clients) {
                 if(otherClient.getNeighbour() == client) {

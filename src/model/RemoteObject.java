@@ -21,4 +21,5 @@ public interface RemoteObject extends Remote {
     public int generatePort() throws RemoteException;
     public int getPort() throws RemoteException;
     public void setPort(int port) throws RemoteException;
+    public void addPortToClient(RemoteObject client) throws RemoteException;
 }

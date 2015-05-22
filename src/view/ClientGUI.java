@@ -49,7 +49,6 @@ public class ClientGUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         try {
             client = new Client();
-            client.getServer().addClient(client);
         } catch (RemoteException ex) {
             Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -88,6 +87,11 @@ public class ClientGUI extends JFrame {
 
             @Override
             public void actionPerformed(ActionEvent e) {
+                try {
+                    client.getServer().addClient(client);
+                } catch (RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 String username = usernameTextField.getText();
                 client.setUsername(username);
                 logoutBtn.setEnabled(true);
@@ -128,8 +132,6 @@ public class ClientGUI extends JFrame {
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                clientsList.setListData(new Object[0]);
-                //client.setUsername(null);
                 try {
                     client.getServer().removeClient(client);
                 } catch (RemoteException ex) {

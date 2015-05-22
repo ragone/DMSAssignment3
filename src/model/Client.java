@@ -51,6 +51,8 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
             ports = new HashMap<String, Integer>();
             clients = new HashSet<>();
         }
+        
+        getServer().addPortToClient(this);
     }
 
     public void sendViaTcp(String message, int port) {
@@ -123,11 +125,14 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
     public void setNeighbour(RemoteObject neighbour) {
         this.neighbour = neighbour;
     }
+    
+    public void addPortToClient(RemoteObject client) throws RemoteException {
+        ports.put(client.getUniqueID(), client.getPort());
+    }
 
     @Override
     public void addClient(RemoteObject client) throws RemoteException {
         clients.add(client);
-        ports.put(client.getUniqueID(), client.getPort());
         if (clients.size() == 1) {
             neighbour = null;
         } else if (clients.size() == 2) {
@@ -141,7 +146,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
 
     public void removeClient(RemoteObject client) throws RemoteException {
         clients.remove(client);
-        ports.remove(client.getUniqueID());
         if (clients.size() == 1) {
             server.setNeighbour(null);
         } else {

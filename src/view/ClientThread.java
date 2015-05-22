@@ -43,17 +43,17 @@ public class ClientThread implements Runnable {
                 }
                 
                 while (true) {
-                    try {
-                        clientSock = serverSock.accept();
-                        br = new BufferedReader(new InputStreamReader(clientSock.getInputStream()));
-                        gui.getMainTextArea().append(br.readLine() + "\n");
-//
-//                        br.close();
-//                        serverSock.close();
-//                        clientSock.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                        try {
+                            clientSock = serverSock.accept();
+                            br = new BufferedReader(new InputStreamReader(clientSock.getInputStream()));
+                            gui.getMainTextArea().append(br.readLine() + "\n");
+    //
+    //                        br.close();
+    //                        serverSock.close();
+    //                        clientSock.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                 }
             }
         }).start();

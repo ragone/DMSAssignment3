@@ -71,21 +71,21 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
     public void sendMessage(Message message) throws RemoteException {
         if (message.getType() == Message.BROADCAST) {
             for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
-                sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent() + "\n", entrySet.getValue());
+                sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
 //                LinkedList<Message> value = entrySet.getValue();
 //                value.push(message);
             }
         } else if (message.getType() == Message.PRIVATE_MESSAGE) {
             List receivers = message.getReceivers();
 
-//            for (Map.Entry<String, LinkedList<Message>> entrySet : messages.entrySet()) {
-//                for (Object obj : receivers) {
-//                    String receiver = (String) obj;
-//                    if (entrySet.getKey().equals(receiver)) {
-//                        messages.get(entrySet.getKey()).push(message);
-//                    }
-//                }
-//            }
+            for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
+                for (Object obj : receivers) {
+                    String receiver = (String) obj;
+                    if (entrySet.getKey().equals(receiver)) {
+                        sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
+                    }
+                }
+            }
         }
     }
 

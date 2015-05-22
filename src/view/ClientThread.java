@@ -46,7 +46,7 @@ public class ClientThread implements Runnable {
                     try {
                         clientSock = serverSock.accept();
                         br = new BufferedReader(new InputStreamReader(clientSock.getInputStream()));
-                        gui.getMainTextArea().append(br.readLine());
+                        gui.getMainTextArea().append(br.readLine() + "\n");
 //
 //                        br.close();
 //                        serverSock.close();

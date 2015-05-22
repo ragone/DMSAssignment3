@@ -59,7 +59,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
      * @param message The message object to post 
      */
     @Override
-    public void postMessage(Message message)
+    public void sendMessage(Message message)
     {
         // If a broadcast message post message to all Clients mailboxes
         if (message.getType() == Message.BROADCAST)
@@ -78,8 +78,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
                         messages.get(entrySet.getKey()).push(message);
                     }
                 }
-            }
-            }      
+            }   
         }
         // Otherwise ELECTION or LEADER message, so post message to 
         // adressees (i.e. neighbours) mailbox
@@ -115,11 +114,13 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
      * Gets this Clients neighbour.
      * @return The remote object representing this Client's neighbour
      */
-    public RemoteObject getNeighbour()
+    @Override
+    public RemoteObject getNeighbour() throws RemoteException
     {
         return neighbour;
     }
-    
+
+
     public void setNeighbour(RemoteObject neighbour) {
         this.neighbour = neighbour;
     }
@@ -245,7 +246,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         else 
             return null;
         }
-    }
 
     /**
      * Gets the election participant boolean of this Client.
@@ -285,10 +285,5 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
    
     public static void main(String[] args) throws RemoteException {
         new Client();
-    }
-
-    @Override
-    public RemoteObject getNeighbour() throws RemoteException {
-        return neighbour;
     }
 }

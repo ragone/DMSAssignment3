@@ -63,7 +63,7 @@ public class ChangRoberts
                     message.setReceiverID(receiverID);
 
                     //Send election message (containing messageID ie. the sender's ID) to the next Client
-                    client.postMessage(message);
+                    client.sendMessage(message);
 
                     // @TODO handle if the Client's neighbour is null?
                     // might not be neccessary as election would not be needed for only one Client
@@ -81,7 +81,7 @@ public class ChangRoberts
 
                     Message leaderMessage = new Message(newSenderID, receiverID,
                             "Leader message from" + senderID, Message.LEADER);
-                    client.postMessage(leaderMessage);
+                    client.sendMessage(leaderMessage);
                     // @TODO handle if the Client's neighbour is null?
 
                 }
@@ -120,7 +120,7 @@ public class ChangRoberts
                     message.setReceiverID(receiverID);
 
                     // Post leader message (with leader ID) to next client in ring
-                    client.postMessage(message);
+                    client.sendMessage(message);
                     // @TODO handle if the Client's neighbour is null?
                 }
             }
@@ -152,7 +152,7 @@ public class ChangRoberts
                 + client.getUniqueID() , Message.ELECTION);
         
         // Post election message with own ID to next process in ring system
-        client.postMessage(electionMessage);
+        client.sendMessage(electionMessage);
         // @TODO handle if the Client's neighbour is null?
     }
 }

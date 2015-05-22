@@ -23,7 +23,8 @@ public class Message implements Serializable {
     private String timestamp;
     private List receivers;
     private String sender;
-    
+    private String receiver;
+
     
 
     //private Date date;
@@ -36,9 +37,11 @@ public class Message implements Serializable {
      * @param type An integer which distinguishes the purpose of the message.
      */
     public Message(String senderUUID, String receiverUUID, String message, int type) {
-        this.senderID = senderUUID;
-        this.receiverID = receiverUUID;
+        this.sender = senderUUID;
+        this.receiver = receiverUUID;
         this.content = message;
+    }
+    
     public Message(String message, int type, String sender) {
         content = message;
         this.sender = sender;
@@ -66,7 +69,7 @@ public class Message implements Serializable {
      */
     public String getSenderID()
     {
-        return senderID;
+        return sender;
     }  
 
     /**
@@ -75,7 +78,7 @@ public class Message implements Serializable {
      */
     public String getReceiverID()
     {
-        return receiverID;
+        return receiver;
     }
 
     /**
@@ -84,7 +87,7 @@ public class Message implements Serializable {
      */
     public void setReceiverID(String receiverID)
     {
-        this.receiverID = receiverID;
+        this.receivers.add(receiverID);
     }
     
     

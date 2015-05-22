@@ -23,8 +23,15 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class Client extends UnicastRemoteObject implements RemoteObject {
-
+/**
+ * Represents a Client object in the distributed messaging system.
+ * @author Alex
+ * @modified jaimes 20150520
+ * Refactored sendMessage() to postMessage(). Modified postMessage to handle 
+ * ELECTION and LEADER messages.
+ * @TODO Trigger Leader Election algorithm when Server needs to be chosen
+ */
+public final class Client extends UnicastRemoteObject implements RemoteObject  {
     private final int RMI_PORT = 1099;
     private int startingPort = 49152;
     private Registry registry;
@@ -35,14 +42,22 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
     private HashMap<String, Integer> ports;
     private HashSet<RemoteObject> clients;
     private RemoteObject neighbour;
-    private String uniqueID;
     private int port;
 
+    private String uniqueID; // The client's unique identifier (UUID).
+    
+    // For Chang-Roberts data
+    boolean participant; // Whether this client is participating in an election
+    String leaderID; // The current leader's (server) unique identifier (UUID).
+    
     public Client() throws RemoteException {
-
+        
+        participant = false; // Defaults to not participating in a leader election
+        
         setupRegistry();
         getServer();
         generateID();
+
         
         port = getServer().generatePort();
         
@@ -87,7 +102,17 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
                         sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
                     }
                 }
-            }
+            }   
+        }
+        // Otherwise ELECTION or LEADER message, so post message to 
+        // adressees (i.e. neighbours) mailbox
+        else if (message.getType() == Message.ELECTION || message.getType() == Message.LEADER)
+        {         
+            // Who is the message addressed to?
+            String receiverID = message.getReceiverID();
+            
+            // Add the message to the adressee's mailbox
+            //messages.get(receiverID).push(message);   
         }
     }
 
@@ -122,6 +147,17 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
         return uniqueID;
     }
 
+    /**
+     * Gets this Clients neighbour.
+     * @return The remote object representing this Client's neighbour
+     */
+    @Override
+    public RemoteObject getNeighbour() throws RemoteException
+    {
+        return neighbour;
+    }
+
+
     public void setNeighbour(RemoteObject neighbour) {
         this.neighbour = neighbour;
     }
@@ -130,20 +166,42 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
         ports.put(client.getUniqueID(), client.getPort());
     }
 
+    /**
+     * Adds the specified Client to the set of Clients, adds an entry 
+     * for the specified Client in the messages hashmap and sets the neighbour of
+     * the specified client, forming a logical Ring topography of Clients.
+     * @param newClient The Client to add to the set of Clients.
+     * @throws RemoteException If there is an error accessing the Client Object
+     */
     @Override
-    public void addClient(RemoteObject client) throws RemoteException {
-        clients.add(client);
-        if (clients.size() == 1) {
+    public void addClient(RemoteObject newClient) throws RemoteException {
+        // Add the specified Client to the Set of Clients.
+        clients.add(newClient);
+        
+        
+        // Check if this new client is the only one in the set
+        if(clients.size() == 1)
+            // Only one Client in set, so no neighbour
             neighbour = null;
-        } else if (clients.size() == 2) {
-            client.setNeighbour(this);
-            neighbour = client;
-        } else {
-            client.setNeighbour(getNeighbour());
-            neighbour = client;
+        // Check if the new Client is the second in the set
+        // i.e. a small Ring, where each Client is a neighbour of the other.
+        else if (clients.size() == 2) {
+            // Make this Client the neighbour of the new Client
+            newClient.setNeighbour(this);
+            // Set the new Client as this Clients neighbour
+            neighbour = newClient;
+        }
+        // Otherwise new client is being added to an exisiting ring
+        // Insert the new Client next to this Client
+        else {
+            // Make the neighbour of this Client the neighbour of the new Client.
+            newClient.setNeighbour(neighbour);
+            // Make this new Client this Client's neighbour
+            neighbour = newClient;
         }
     }
-
+    
+    @Override
     public void removeClient(RemoteObject client) throws RemoteException {
         clients.remove(client);
         if (clients.size() == 1) {
@@ -225,9 +283,54 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
 //            return null;
 //        }
 //    }
+    /**
+     * Gets the latest message sent to this Client.
+     * @param uniqueID The unique ID of this Client.
+     * @return The latest message sent to this Client or null if none.
+     * @throws RemoteException Error if RMI Server unavailable.
+     */
+//    @Override
+//    public Message getLastMessage(String uniqueID) throws RemoteException {
+//        if(messages.containsKey(uniqueID) && !messages.get(uniqueID).isEmpty())
+//            return messages.get(uniqueID).pop();
+//        else 
+//            return null;
+//        }
 
-    @Override
-    public RemoteObject getNeighbour() throws RemoteException {
-        return neighbour;
+    /**
+     * Gets the election participant boolean of this Client.
+     * @return Is election participant true or false.
+     */
+    public boolean isParticipant()
+    {
+        return participant;
     }
+
+    /**
+     * Sets the election participant boolean value.
+     * @param isParticipant Has this Client participated in an election true or false
+     */
+    public void setParticipant(boolean isParticipant)
+    {
+        this.participant = isParticipant;
+    }
+
+    /**
+     * Gets the unique ID (UUID) of the leader (Server) of this Client.
+     * @return the unique ID (UUID) String of the leader (Server)
+     */
+    public String getLeaderID()
+    {
+        return leaderID;
+    }
+
+    /**
+     * Sets the unique ID (UUID) of the leader (Server) of this Client.
+     * @param leaderID This Client's Server UUID 
+     */
+    public void setLeaderID(String leaderID)
+    {
+        this.leaderID = leaderID;
+    }
+   
 }

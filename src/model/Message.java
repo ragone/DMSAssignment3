@@ -6,6 +6,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Represents a a message object which can be distributed around
+ * the system.
+ * @author alex
+ * @modified 20150517 Jaimes added Docs, fields and getters for Chang-Roberts
+ */
 public class Message implements Serializable {
     public static int BROADCAST = 1;
     public static int ELECTION = 2; // for Chang Roberts leader election
@@ -17,9 +23,25 @@ public class Message implements Serializable {
     private String timestamp;
     private List receivers;
     private String sender;
-    
+    private String receiver;
+
     
 
+    //private Date date;
+
+    /**
+     * Constructor for a message object which can be distributed around
+     * the system.
+     * @param senderUUID A String identifying the sender of the message.
+     * @param message A String with the message's content.
+     * @param type An integer which distinguishes the purpose of the message.
+     */
+    public Message(String senderUUID, String receiverUUID, String message, int type) {
+        this.sender = senderUUID;
+        this.receiver = receiverUUID;
+        this.content = message;
+    }
+    
     public Message(String message, int type, String sender) {
         content = message;
         this.sender = sender;
@@ -40,7 +62,40 @@ public class Message implements Serializable {
         Date date = new Date();
         timestamp = dateFormat.format(date);
     }
+
+    /**
+     * Gets the UUID of the Client which sent this message.
+     * @return String of the UUID which identifies the client that sent this message.
+     */
+    public String getSenderID()
+    {
+        return sender;
+    }  
+
+    /**
+     * Gets the ID of the intended recipient of this message.
+     * @return The UUID of the message recipient
+     */
+    public String getReceiverID()
+    {
+        return receiver;
+    }
+
+    /**
+     * Sets the UUID of the intended recipient of the message.
+     * @param receiverID The UUID of the receiving Client to set.
+     */
+    public void setReceiverID(String receiverID)
+    {
+        this.receivers.add(receiverID);
+    }
     
+    
+    
+    /**
+     * Gets the content of this message.
+     * @return The content of this message.
+     */
     public String getContent() {
         return content;
     }
@@ -50,10 +105,11 @@ public class Message implements Serializable {
     }
 
     /**
-     * @return the type
+     * Gets the type of this message.
+     * @return the type, an integer which distinguishes the purpose of the message.
      */
     public int getType() {
-        return type;
+        return type; 
     }
     
     public String getTime() {

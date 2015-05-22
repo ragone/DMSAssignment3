@@ -100,6 +100,8 @@ public class ClientGUI extends JFrame {
                 messageTextField.setEnabled(true);
                 usernameTextField.setEnabled(false);
                 getMainTextArea().setEnabled(true);
+//                Message msg = new Message(client.getUniqueID(), client.getUniqueID(), // Added dummy receiverID
+//                        username + " joined the chat\n", Message.BROADCAST);
                 Message msg = new Message(" joined the chat", Message.BROADCAST, client.getUniqueID());
                 try {
                     client.getServer().sendMessage(msg);

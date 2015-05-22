@@ -3,7 +3,6 @@ package model;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.LinkedList;
 
 
 public interface RemoteObject extends Remote {

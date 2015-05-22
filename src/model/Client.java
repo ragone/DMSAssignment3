@@ -1,5 +1,12 @@
 package model;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -11,6 +18,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,13 +33,18 @@ import java.util.logging.Logger;
  */
 public final class Client extends UnicastRemoteObject implements RemoteObject  {
     private final int RMI_PORT = 1099;
+    private int startingPort = 49152;
     private Registry registry;
     private boolean isServer;
     private String username;
     private RemoteObject server;
-    private HashMap<String, LinkedList<Message>> messages;
+    //private HashMap<String, LinkedList<Message>> messages;
+    private HashMap<String, Integer> ports;
     private HashSet<RemoteObject> clients;
     private RemoteObject neighbour;
+    private String uniqueID;
+    private int port;
+
     private String uniqueID; // The client's unique identifier (UUID).
     
     // For Chang-Roberts data
@@ -47,35 +60,45 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         generateID();
 
         
-        if(isServer) {
-            messages = new HashMap<String, LinkedList<Message>>();
+        port = getServer().generatePort();
+        
+        if (isServer) {
+            // messages = new HashMap<String, LinkedList<Message>>();
+            ports = new HashMap<String, Integer>();
             clients = new HashSet<>();
         }
     }
-    
-    /**
-     * Posts messages from this Client to the message list of the Client specified
-     * in the message. BROADCAST messages are posted to all Clients in the system.
-     * @param message The message object to post 
-     */
-    @Override
-    public void sendMessage(Message message)
-    {
-        // If a broadcast message post message to all Clients mailboxes
-        if (message.getType() == Message.BROADCAST)
-        {
-            for (Map.Entry<String, LinkedList<Message>> entrySet : messages.entrySet())
-            {
-                LinkedList<Message> value = entrySet.getValue();
-                value.push(message);
+
+    public void sendViaTcp(String message, int port) {
+        try {
+        Socket sock = new Socket("localhost", port);
+        PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
+        
+        out.println(message);
+        out.flush();
+
+        out.close();
+        sock.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendMessage(Message message) throws RemoteException {
+        if (message.getType() == Message.BROADCAST) {
+            for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
+                sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
+//                LinkedList<Message> value = entrySet.getValue();
+//                value.push(message);
             }
-        } else if(message.getType() == Message.PRIVATE_MESSAGE) {
+        } else if (message.getType() == Message.PRIVATE_MESSAGE) {
             List receivers = message.getReceivers();
-            for (Map.Entry<String, LinkedList<Message>> entrySet : messages.entrySet()) {
-                for(Object obj : receivers) {
+
+            for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
+                for (Object obj : receivers) {
                     String receiver = (String) obj;
-                    if(entrySet.getKey().equals(receiver)) {
-                        messages.get(entrySet.getKey()).push(message);
+                    if (entrySet.getKey().equals(receiver)) {
+                        sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
                     }
                 }
             }   
@@ -91,21 +114,34 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
             messages.get(receiverID).push(message);   
         }
     }
-    
+
     public String[] getClients() throws RemoteException {
         String[] clientsArr = new String[clients.size()];
         Iterator<RemoteObject> ita = clients.iterator();
-        for(int i = 0; i < clients.size(); i++) {
+        for (int i = 0; i < clients.size(); i++) {
             RemoteObject nextClient = ita.next();
             clientsArr[i] = nextClient.getUniqueID();
         }
         return clientsArr;
     }
     
+    public int generatePort() throws RemoteException {
+        startingPort++;
+        return startingPort;
+    }
+    
+    public int getPort() throws RemoteException {
+        return port;
+    }
+    
+    public void setPort(int port) throws RemoteException {
+        this.port = port;
+    }
+
     public void generateID() {
         uniqueID = UUID.randomUUID().toString();
     }
-    
+
     public String getUniqueID() {
         return uniqueID;
     }
@@ -165,28 +201,28 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     @Override
     public void removeClient(RemoteObject client) throws RemoteException {
         clients.remove(client);
-        messages.remove(client.getUniqueID());
-        if(clients.size() == 1) {
+        ports.remove(client.getUniqueID());
+        if (clients.size() == 1) {
             server.setNeighbour(null);
         } else {
-            for(RemoteObject otherClient : clients) {
-                if(otherClient.getNeighbour() == client) {
+            for (RemoteObject otherClient : clients) {
+                if (otherClient.getNeighbour() == client) {
                     otherClient.setNeighbour(client.getNeighbour());
                 }
             }
         }
     }
-    
+
     public RemoteObject getClientByID(String uniqueID) throws RemoteException {
-        if(uniqueID.equals(this.uniqueID)) {
+        if (uniqueID.equals(this.uniqueID)) {
             return this;
-        } else if(uniqueID.equals(server.getUniqueID())) {
+        } else if (uniqueID.equals(server.getUniqueID())) {
             return null;
         } else {
             return getNeighbour().getClientByID(uniqueID);
         }
     }
-    
+
     public void setupRegistry() throws RemoteException {
         try {
             // If the registry can be created it takes on a role as server
@@ -199,23 +235,23 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
             isServer = false;
         }
     }
-    
+
     public String getUsername() {
         return username;
     }
-    
+
     public void setUsername(String username) {
         this.username = username;
     }
-    
+
     public boolean isServer() {
         return isServer;
     }
-    
+
     public void setAsServer(boolean b) {
         this.isServer = b;
     }
-    
+
     public RemoteObject getServer() {
         try {
             server = (RemoteObject) registry.lookup("server");
@@ -224,7 +260,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
         return server;
     }
-    
+
     public void registerAsServer() {
         try {
             registry.rebind("server", this);
@@ -233,6 +269,18 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
     }
 
+    public static void main(String[] args) throws RemoteException {
+        new Client();
+    }
+
+//    @Override
+//    public Message getLastMessage(String uniqueID) throws RemoteException {
+//        if (messages.containsKey(uniqueID) && !messages.get(uniqueID).isEmpty()) {
+//            return messages.get(uniqueID).pop();
+//        } else {
+//            return null;
+//        }
+//    }
     /**
      * Gets the latest message sent to this Client.
      * @param uniqueID The unique ID of this Client.

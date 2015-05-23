@@ -38,13 +38,11 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     private boolean isServer;
     private String username;
     private RemoteObject server;
-    //private HashMap<String, LinkedList<Message>> messages;
     private HashMap<String, Integer> ports;
-    private HashSet<RemoteObject> clients;
+    private HashSet<RemoteObject> clients;  
+    private String uniqueID; // The client's unique identifier (UUID).
     private RemoteObject neighbour;
     private int port;
-
-    private String uniqueID; // The client's unique identifier (UUID).
     
     // For Chang-Roberts data
     boolean participant; // Whether this client is participating in an election
@@ -56,13 +54,11 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         
         setupRegistry();
         getServer();
-        generateID();
-
+        generateID(); // Generate a unique UUID for this client
         
         port = getServer().generatePort();
         
         if (isServer) {
-            // messages = new HashMap<String, LinkedList<Message>>();
             ports = new HashMap<String, Integer>();
             clients = new HashSet<>();
         }
@@ -70,6 +66,12 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         getServer().addPortToClient(this);
     }
 
+    /**
+     * Sends specified message to specified port on the 
+     * localhost IP address via TCP.
+     * @param message The message to send
+     * @param port The port to send the message.
+     */
     public void sendViaTcp(String message, int port) {
         try {
         Socket sock = new Socket("localhost", port);
@@ -89,8 +91,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         if (message.getType() == Message.BROADCAST) {
             for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
                 sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
-//                LinkedList<Message> value = entrySet.getValue();
-//                value.push(message);
             }
         } else if (message.getType() == Message.PRIVATE_MESSAGE) {
             List receivers = message.getReceivers();
@@ -104,7 +104,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
                 }
             }   
         }
-        // Otherwise ELECTION or LEADER message, so post message to 
+        // Otherwise ELECTION or LEADER message, so send message to 
         // adressees (i.e. neighbours) mailbox
         else if (message.getType() == Message.ELECTION || message.getType() == Message.LEADER)
         {         
@@ -269,10 +269,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         } catch (RemoteException ex) {
             Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
-
-    public static void main(String[] args) throws RemoteException {
-        new Client();
     }
 
 //    @Override

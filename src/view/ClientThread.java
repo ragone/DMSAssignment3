@@ -56,7 +56,7 @@ public class ClientThread implements Runnable {
                     }
                     
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(100);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
                     }

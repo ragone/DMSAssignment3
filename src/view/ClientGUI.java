@@ -2,6 +2,7 @@ package view;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -17,6 +18,8 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -174,29 +177,34 @@ public class ClientGUI extends JFrame {
 
         add(loginPnl, BorderLayout.SOUTH);
 
-        mainPnl = new JPanel(new GridLayout(1, 2, 10, 10));
-        mainPnl.setBorder(BorderFactory.createCompoundBorder(new EmptyBorder(10, 10, 0, 10), BorderFactory.createBevelBorder(1)));
+        mainPnl = new JPanel(new BorderLayout());
 
         clientsList = new JList();
 
-        mainPnl.add(clientsList);
+        JPanel clientPnl = new JPanel(new BorderLayout());
+        clientPnl.setPreferredSize(new Dimension(200, 400));
+        clientPnl.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Users Online"), BorderFactory.createEtchedBorder()));
+        clientPnl.add(clientsList, BorderLayout.CENTER);
+        add(clientPnl, BorderLayout.WEST);
         mainTextArea = new JTextArea();
 
         JScrollPane scroll = new JScrollPane(mainTextArea);
+        scroll.setBorder(BorderFactory.createEtchedBorder());
         scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         mainTextArea.setEnabled(false);
         mainTextArea.setLineWrap(true);
-        mainPnl.add(scroll);
+        mainPnl.add(scroll, BorderLayout.CENTER);
+        mainPnl.setBorder(BorderFactory.createTitledBorder("Chatarea"));
 
         add(mainPnl, BorderLayout.CENTER);
 
         JLabel header = new JLabel("CHATROOM");
-        header.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 60));
+        header.setFont(new Font("Verdana", Font.BOLD, 60));
         header.setForeground(Color.DARK_GRAY);
         header.setHorizontalAlignment(SwingConstants.CENTER);
 
         add(header, BorderLayout.NORTH);
-
+        
         setVisible(true);
 
         clientThread = new ClientThread(client, gui);

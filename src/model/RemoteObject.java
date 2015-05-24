@@ -14,7 +14,7 @@ public interface RemoteObject extends Remote {
     public RemoteObject getClientByID(String uniqueID) throws RemoteException;
     public void sendMessage(Message message) throws RemoteException;
     public void setNeighbour(RemoteObject neighbour) throws RemoteException;
-    public String[] getClients() throws RemoteException;
+    public HashMap getClients() throws RemoteException;
     public RemoteObject getNeighbour() throws RemoteException;
     public String getUsername() throws RemoteException;
     public boolean isServer() throws RemoteException;
@@ -28,4 +28,5 @@ public interface RemoteObject extends Remote {
     public void setNewServer() throws RemoteException;
     public boolean hasToken() throws RemoteException;
     public void setHasToken(boolean b) throws RemoteException;
+    public RemoteObject getClientByUsername(String username) throws RemoteException;
 }

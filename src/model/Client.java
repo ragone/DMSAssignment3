@@ -10,6 +10,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,7 +33,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
     private boolean isServer;
     private String username;
     private RemoteObject server;
-    //private HashMap<String, LinkedList<Message>> messages;
     private HashMap<String, Integer> ports;
     private HashSet<RemoteObject> clients;
     private RemoteObject neighbour;
@@ -54,13 +54,13 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
         setupRegistry();
         getServer();
         generateID();
-
+        
         port = getServer().generatePort();
         hasToken = false;
 
         if (isServer) {
             // messages = new HashMap<String, LinkedList<Message>>();
-            ports = new HashMap<String, Integer>();
+            ports = new HashMap<>();
             clients = new HashSet<>();
             hasToken = true;
         }
@@ -129,11 +129,16 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
 //                value.push(message);
                 }
             } else if (message.getType() == Message.PRIVATE_MESSAGE) {
-                List receivers = message.getReceivers();
+                List receiversList = message.getReceivers();
+                List<String> receiversIDList = new LinkedList();
+                for(Object resceiver : receiversList) {
+                    receiversIDList.add(getClientByUsername((String) resceiver).getUniqueID());
+                }
+                
+                
 
                 for (Map.Entry<String, Integer> entrySet : getPorts().entrySet()) {
-                    for (Object obj : receivers) {
-                        String receiver = (String) obj;
+                    for (String receiver : receiversIDList) {
                         if (entrySet.getKey().equals(receiver)) {
                             sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
                         }
@@ -150,14 +155,25 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
             }
     }
 
-    public String[] getClients() throws RemoteException {
-        String[] clientsArr = new String[clients.size()];
+    public HashMap getClients() throws RemoteException {
+        
+        HashMap<String, String> clientsMap = new HashMap();
         Iterator<RemoteObject> ita = clients.iterator();
         for (int i = 0; i < clients.size(); i++) {
             RemoteObject nextClient = ita.next();
-            clientsArr[i] = nextClient.getUniqueID();
+            clientsMap.put(nextClient.getUniqueID(), nextClient.getUsername());
         }
-        return clientsArr;
+        return clientsMap;
+    }
+    
+    public RemoteObject getClientByUsername(String username) throws RemoteException {
+        for (Iterator<RemoteObject> iterator = clients.iterator(); iterator.hasNext();) {
+            RemoteObject client = iterator.next();
+            if(client.getUsername().equals(username)) {
+                return client;
+            }
+        }
+        return null;
     }
 
     @Override

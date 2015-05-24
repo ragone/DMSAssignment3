@@ -2,19 +2,14 @@ package view;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.Image;
-import java.awt.TextArea;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -25,11 +20,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingUtilities;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.plaf.ListUI;
 import model.Client;
 import model.Message;
 import model.RemoteObject;
@@ -45,7 +37,6 @@ public class ClientGUI extends JFrame {
     private final JList clientsList;
     private Thread t;
     private ClientThread clientThread;
-    private String selection;
 
     public ClientGUI() throws RemoteException {
         super("Chatroom");
@@ -125,8 +116,6 @@ public class ClientGUI extends JFrame {
                 messageTextField.setEnabled(true);
                 usernameTextField.setEnabled(false);
                 getMainTextArea().setEnabled(true);
-//                Message msg = new Message(client.getUniqueID(), client.getUniqueID(), // Added dummy receiverID
-//                        username + " joined the chat\n", Message.BROADCAST);
                 Message msg = new Message(" joined the chat", Message.BROADCAST, client.getUniqueID());
                 try {
                     client.getServer().sendMessage(msg);
@@ -197,6 +186,13 @@ public class ClientGUI extends JFrame {
 
         add(mainPnl, BorderLayout.CENTER);
 
+        JLabel header = new JLabel("CHATROOM");
+        header.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 60));
+        header.setForeground(Color.DARK_GRAY);
+        header.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        add(header, BorderLayout.NORTH);
+        
         setVisible(true);
 
         clientThread = new ClientThread(client, gui);

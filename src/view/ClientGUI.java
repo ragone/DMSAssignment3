@@ -6,6 +6,8 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +47,36 @@ public class ClientGUI extends JFrame {
         setSize(800, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        addWindowListener(new WindowListener() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                removeClient();
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+            }
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+            }
+        });
         try {
             client = new Client();
         } catch (RemoteException ex) {
@@ -134,35 +166,7 @@ public class ClientGUI extends JFrame {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                logoutBtn.setEnabled(false);
-                joinBtn.setEnabled(true);
-                sendMsgBtn.setEnabled(false);
-                messageTextField.setEnabled(false);
-                usernameTextField.setEnabled(true);
-                getMainTextArea().setEnabled(false);
-                Message msg = new Message(" left the chat", Message.BROADCAST, client.getUniqueID());
-                try {
-                    client.getServer().sendMessage(msg);
-                } catch (RemoteException ex) {
-                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                try {
-                    client.getServer().removeClient(client);
-                } catch (RemoteException ex) {
-                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-                }
-                if (client.isServer()) {
-                    try {
-                        if (!client.getConnectedClients().isEmpty()) {
-                            for (RemoteObject client : client.getConnectedClients()) {
-                                client.setNewServer();
-                            }
-                        }
-                        // startLeaderElection();
-                    } catch (RemoteException ex) {
-                        Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
+                removeClient();
             }
         });
         logoutBtn.setEnabled(false);
@@ -190,13 +194,45 @@ public class ClientGUI extends JFrame {
         header.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 60));
         header.setForeground(Color.DARK_GRAY);
         header.setHorizontalAlignment(SwingConstants.CENTER);
-        
+
         add(header, BorderLayout.NORTH);
-        
+
         setVisible(true);
 
         clientThread = new ClientThread(client, gui);
         new Thread(clientThread).start();
+    }
+
+    public void removeClient() {
+        logoutBtn.setEnabled(false);
+        joinBtn.setEnabled(true);
+        sendMsgBtn.setEnabled(false);
+        messageTextField.setEnabled(false);
+        usernameTextField.setEnabled(true);
+        getMainTextArea().setEnabled(false);
+        Message msg = new Message(" left the chat", Message.BROADCAST, client.getUniqueID());
+        try {
+            client.getServer().sendMessage(msg);
+        } catch (RemoteException ex) {
+            Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        try {
+            client.getServer().removeClient(client);
+        } catch (RemoteException ex) {
+            Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (client.isServer()) {
+            try {
+                if (!client.getConnectedClients().isEmpty()) {
+                    for (RemoteObject client : client.getConnectedClients()) {
+                        client.setNewServer();
+                    }
+                }
+                // startLeaderElection();
+            } catch (RemoteException ex) {
+                Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
 
     public static void main(String[] args) throws RemoteException {

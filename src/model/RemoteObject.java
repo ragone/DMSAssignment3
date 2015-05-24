@@ -3,6 +3,8 @@ package model;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.HashMap;
+import java.util.HashSet;
 
 
 public interface RemoteObject extends Remote {
@@ -11,7 +13,6 @@ public interface RemoteObject extends Remote {
     public String getUniqueID() throws RemoteException;
     public RemoteObject getClientByID(String uniqueID) throws RemoteException;
     public void sendMessage(Message message) throws RemoteException;
-    //public Message getLastMessage(String uniqueID) throws RemoteException;
     public void setNeighbour(RemoteObject neighbour) throws RemoteException;
     public String[] getClients() throws RemoteException;
     public RemoteObject getNeighbour() throws RemoteException;
@@ -21,4 +22,10 @@ public interface RemoteObject extends Remote {
     public int getPort() throws RemoteException;
     public void setPort(int port) throws RemoteException;
     public void addPortToClient(RemoteObject client) throws RemoteException;
+    public HashMap<String, Integer> getPorts() throws RemoteException;
+    public HashSet<RemoteObject> getConnectedClients() throws RemoteException;
+    public void setServer(boolean b) throws RemoteException;
+    public void setNewServer() throws RemoteException;
+    public boolean hasToken() throws RemoteException;
+    public void setHasToken(boolean b) throws RemoteException;
 }

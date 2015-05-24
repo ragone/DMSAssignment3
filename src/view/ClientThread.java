@@ -45,6 +45,30 @@ public class ClientThread implements Runnable {
      */
     @Override
     public void run() {
+        // Start thread for token
+        new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                while(true) {
+                    try {
+                        if(client.hasToken() && !client.wantToken() && client.getNeighbour() != null) {
+                            client.getNeighbour().setHasToken(true);
+                            client.setHasToken(false);
+                        }
+                    } catch (RemoteException ex) {
+                        Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        }).start();
+        // Start thread for listening to incomming messages
         new Thread(new Runnable() {
             Socket clientSock;
             ServerSocket serverSock;
@@ -63,16 +87,14 @@ public class ClientThread implements Runnable {
                             clientSock = serverSock.accept();
                             br = new BufferedReader(new InputStreamReader(clientSock.getInputStream()));
                             gui.getMainTextArea().append(br.readLine() + "\n");
-    //
-    //                        br.close();
-    //                        serverSock.close();
-    //                        clientSock.close();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                 }
             }
         }).start();
+        
+        // update gui
         while (true) {
             if (client.getUsername() != null) {
                 try {

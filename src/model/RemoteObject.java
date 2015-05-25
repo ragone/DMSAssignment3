@@ -14,7 +14,6 @@ public interface RemoteObject extends Remote {
     public RemoteObject getClientByID(String uniqueID) throws RemoteException;
     public void sendMessage(Message message) throws RemoteException;
     public void setNeighbour(RemoteObject neighbour) throws RemoteException;
-    public String[] getClients() throws RemoteException;
     public HashSet<RemoteObject> getClientsSet() throws RemoteException;
     public void setClients(HashSet<RemoteObject> clients) throws RemoteException;
     public HashMap getClients() throws RemoteException;

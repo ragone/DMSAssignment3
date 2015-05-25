@@ -54,7 +54,14 @@ public class ClientGUI extends JFrame {
         addWindowListener(new WindowListener() {
             @Override
             public void windowClosing(WindowEvent e) {
-                removeClient();
+                try
+                {
+                    removeClient();
+                }
+                catch (RemoteException ex)
+                {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
             @Override
@@ -170,7 +177,14 @@ public class ClientGUI extends JFrame {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                removeClient();
+                try
+                {
+                    removeClient();
+                }
+                catch (RemoteException ex)
+                {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
         logoutBtn.setEnabled(false);
@@ -212,7 +226,7 @@ public class ClientGUI extends JFrame {
         new Thread(clientThread).start();
     }
 
-    public void removeClient() {
+    public void removeClient() throws RemoteException {
         logoutBtn.setEnabled(false);
         joinBtn.setEnabled(true);
         sendMsgBtn.setEnabled(false);

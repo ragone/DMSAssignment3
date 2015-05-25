@@ -10,6 +10,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,7 +42,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
     private boolean hasToken;
     private boolean wantToken;
 
-    private String uniqueID; // The client's unique identifier (UUID).
 
     // For Chang-Roberts data
     boolean electionParticipant; // Whether this client is participating in an election
@@ -165,14 +165,10 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
                 // Who is the message addressed to?
                 String receiverID = message.getReceiverID();
 
-            // Add the message to the adressee's mailbox
-                //messages.get(receiverID).push(message);   
-            }
-    }
-
-            // Print the message to the recipient's message window via TCP
+            
+                 // Print the message to the recipient's message window via TCP
             for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
-                for (Object obj : receivers) {
+                for (Object obj : message.getReceivers()) {
                     String receiver = (String) obj;
                     if (entrySet.getKey().equals(receiver)) {
                         // Send message to rectpient's message window
@@ -185,9 +181,11 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
                         System.out.println("changRobertsReceiveMessage(message) called from Client.sendMessage()");
                     }
                 }
-            }   
-        } 
+            } 
+            }
+        
     }
+
     
 
     /**
@@ -195,9 +193,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
      * @return The String array of the Client's UUIDs
      * @throws RemoteException 
      */
-    @Override
-    public String[] getClients() throws RemoteException {
-        String[] clientsArr = new String[clients.size()];
     public HashMap getClients() throws RemoteException {
         
         HashMap<String, String> clientsMap = new HashMap();
@@ -498,12 +493,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
         this.leaderID = leaderID;
     }
 
-    /**
-     * @return the ports
-     */
-    public HashMap<String, Integer> getPorts() {
-        return ports;
-    }
+    
 
     @Override
     public HashSet<RemoteObject> getConnectedClients() throws RemoteException {

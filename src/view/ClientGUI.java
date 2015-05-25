@@ -1,9 +1,7 @@
 package view;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.GridLayout;
-import java.awt.TextArea;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
@@ -19,11 +17,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.plaf.ListUI;
+import leaderelection.ChangRoberts;
 import model.Client;
 import model.Message;
 
@@ -100,10 +95,8 @@ public class ClientGUI extends JFrame {
                 messageTextField.setEnabled(true);
                 usernameTextField.setEnabled(false);
                 getMainTextArea().setEnabled(true);
-//                Message msg = new Message(client.getUniqueID(), client.getUniqueID(), // Added dummy receiverID
-//                        username + " joined the chat\n", Message.BROADCAST);
-                Message msg = new Message(" joined the chat", Message.BROADCAST, client.getUniqueID());
                 try {
+                    Message msg = new Message(" joined the chat", Message.BROADCAST, client.getUniqueID());
                     client.getServer().sendMessage(msg);
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
@@ -119,8 +112,16 @@ public class ClientGUI extends JFrame {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (client.isServer()) {
-                    // startLeaderElection();
+                try {
+                    if (client.isServer()) {
+                        // start LeaderElection();
+                        System.out.println("Leader Election called");
+                        ChangRoberts leaderElection = new ChangRoberts(client);
+                        leaderElection.startElection();
+                    }
+                }
+                catch (RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 logoutBtn.setEnabled(false);
                 joinBtn.setEnabled(true);
@@ -128,8 +129,8 @@ public class ClientGUI extends JFrame {
                 messageTextField.setEnabled(false);
                 usernameTextField.setEnabled(true);
                 getMainTextArea().setEnabled(false);
-                Message msg = new Message(" left the chat", Message.BROADCAST, client.getUniqueID());
                 try {
+                    Message msg = new Message(" left the chat", Message.BROADCAST, client.getUniqueID());
                     client.getServer().sendMessage(msg);
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);

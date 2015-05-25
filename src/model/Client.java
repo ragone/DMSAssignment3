@@ -1,11 +1,6 @@
 package model;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -15,13 +10,12 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import leaderelection.ChangRoberts;
 
 /**
  * Represents a Client object in the distributed messaging system.
@@ -45,32 +39,37 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     private int port;
     
     // For Chang-Roberts data
-    boolean participant; // Whether this client is participating in an election
+    boolean electionParticipant; // Whether this client is participating in an election
     String leaderID; // The current leader's (server) unique identifier (UUID).
     
     public Client() throws RemoteException {
         
-        participant = false; // Defaults to not participating in a leader election
+        electionParticipant = false; // Defaults to not participating in a leader election
         
         setupRegistry();
         getServer();
         generateID(); // Generate a unique UUID for this client
         
-        port = getServer().generatePort();
+        // Generate a new port for this Client on the Server
+        port = getServer().generatePort(); 
         
+        // If this is the server
         if (isServer) {
-            ports = new HashMap<String, Integer>();
+            // Create a Map of ClientIDs and their port assignments
+            ports = new HashMap<String, Integer>(); // <ClientID, Port number>
+            // Create a Set of Clients
             clients = new HashSet<>();
         }
         
+        // Add this Client to the Server's Map of <ClientID, Port number> key pairs
         getServer().addPortToClient(this);
     }
 
     /**
-     * Sends specified message to specified port on the 
-     * localhost IP address via TCP.
+     * Prints the specified message to message window of the specified Client.
+     * Client is specified as a port and the message is sent via TCP/IP.
      * @param message The message to send
-     * @param port The port to send the message.
+     * @param port The TCP/IP port to send the message to
      */
     public void sendViaTcp(String message, int port) {
         try {
@@ -83,18 +82,29 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         out.close();
         sock.close();
         } catch(Exception e) {
-            e.printStackTrace();
+            System.out.println("Exception Error: " + e);
         }
     }
 
+    /**
+     * Sends the specified Message to the recipient Clients specified in the message
+     * via TCP/IP.
+     * @param message The Message to send
+     * @throws RemoteException Throws error if RMI server methods can not be reached.
+     */
+    @Override
     public void sendMessage(Message message) throws RemoteException {
         if (message.getType() == Message.BROADCAST) {
             for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
                 sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
             }
+        // Otherwise PRIVATE, so send message to adressees message window.
         } else if (message.getType() == Message.PRIVATE_MESSAGE) {
+            
+            // Who is the message addressed to?
             List receivers = message.getReceivers();
 
+            // Print the message to the recipient's message window via TCP
             for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
                 for (Object obj : receivers) {
                     String receiver = (String) obj;
@@ -102,20 +112,41 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
                         sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
                     }
                 }
-            }   
-        }
+            }
         // Otherwise ELECTION or LEADER message, so send message to 
-        // adressees (i.e. neighbours) mailbox
-        else if (message.getType() == Message.ELECTION || message.getType() == Message.LEADER)
-        {         
+        // adressees message window, and trigger leader election message sending
+        } else if (message.getType() == Message.ELECTION || 
+                message.getType() == Message.LEADER) {
+                        
             // Who is the message addressed to?
-            String receiverID = message.getReceiverID();
-            
-            // Add the message to the adressee's mailbox
-            //messages.get(receiverID).push(message);   
-        }
-    }
+            List receivers = message.getReceivers();
 
+            // Print the message to the recipient's message window via TCP
+            for (Map.Entry<String, Integer> entrySet : ports.entrySet()) {
+                for (Object obj : receivers) {
+                    String receiver = (String) obj;
+                    if (entrySet.getKey().equals(receiver)) {
+                        // Send message to rectpient's message window
+                        sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
+                                    
+                        // receive and process leader election message
+                        RemoteObject recipient = getClientByID(message.getSender());                       
+                        ChangRoberts leaderElection = new ChangRoberts(recipient);
+                        leaderElection.changRobertsReceiveMessage(message);
+                        System.out.println("changRobertsReceiveMessage(message) called from Client.sendMessage()");
+                    }
+                }
+            }   
+        } 
+    }
+    
+
+    /**
+     * Gets a String array of the Client's UUIDs.
+     * @return The String array of the Client's UUIDs
+     * @throws RemoteException 
+     */
+    @Override
     public String[] getClients() throws RemoteException {
         String[] clientsArr = new String[clients.size()];
         Iterator<RemoteObject> ita = clients.iterator();
@@ -125,31 +156,87 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
         return clientsArr;
     }
+
+    /**
+     * Gets the HashSet of Client Remote Objects.
+     * @return the HashSet of Client Remote Objects
+     * @throws java.rmi.RemoteException
+     */
+    @Override
+    public HashSet<RemoteObject> getClientsSet() throws RemoteException
+    {
+        return clients;
+    }
+
+    /**
+     * Sets the HashSet of Client Remote Objects.
+     * @param clients The set of Client Remote Objects.
+     * @throws java.rmi.RemoteException
+     */
+    @Override
+    public void setClients(HashSet<RemoteObject> clients) throws RemoteException
+    {
+        this.clients = clients;
+    }
     
+    /**
+     * Returns an incremented port number.
+     * @return An incremented port number
+     * @throws RemoteException 
+     */
+    @Override
     public int generatePort() throws RemoteException {
         startingPort++;
         return startingPort;
     }
     
+    @Override
     public int getPort() throws RemoteException {
         return port;
     }
     
+    @Override
     public void setPort(int port) throws RemoteException {
         this.port = port;
     }
 
+    /**
+     * Gets the Server's list of clients and their associated ports. 
+     * @return The list of clients and their associated ports
+     * @throws java.rmi.RemoteException
+     */
+    @Override
+    public HashMap<String, Integer> getPorts() throws RemoteException
+    {
+        return ports;
+    }  
+
+    /**
+     * Sets the Map of the Server's list of clients and their associated ports.
+     * @param ports The list of clients and their associated ports
+     * @throws java.rmi.RemoteException
+     */
+    @Override
+    public void setPorts(HashMap<String, Integer> ports) throws RemoteException
+    {
+        this.ports = ports;
+    }
+    
+    
+    
     public void generateID() {
         uniqueID = UUID.randomUUID().toString();
     }
 
-    public String getUniqueID() {
+    @Override
+    public String getUniqueID() throws RemoteException {
         return uniqueID;
     }
 
     /**
      * Gets this Clients neighbour.
-     * @return The remote object representing this Client's neighbour
+     * @return The remote object representing this Client's neighbour.
+     * @throws java.rmi.RemoteException
      */
     @Override
     public RemoteObject getNeighbour() throws RemoteException
@@ -158,10 +245,18 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
     }
 
 
+    @Override
     public void setNeighbour(RemoteObject neighbour) {
         this.neighbour = neighbour;
     }
     
+    /**
+     * Assigns the specified Client's UUID and port key pair to 
+     * the <Client UUID, Port> map.
+     * @param client The Client to store in the map
+     * @throws RemoteException
+     */
+    @Override
     public void addPortToClient(RemoteObject client) throws RemoteException {
         ports.put(client.getUniqueID(), client.getPort());
     }
@@ -215,6 +310,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
     }
 
+    @Override
     public RemoteObject getClientByID(String uniqueID) throws RemoteException {
         if (uniqueID.equals(this.uniqueID)) {
             return this;
@@ -225,6 +321,12 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
     }
 
+    /**
+     * Connects to an RMI registry. If an RMI registry does not exist, it is
+     * created and this client is registered as the Server. Otherwise, the 
+     * RMI register is located.
+     * @throws RemoteException 
+     */
     public void setupRegistry() throws RemoteException {
         try {
             // If the registry can be created it takes on a role as server
@@ -238,6 +340,7 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
     }
 
+    @Override
     public String getUsername() {
         return username;
     }
@@ -246,23 +349,43 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         this.username = username;
     }
 
-    public boolean isServer() {
+    /**
+     * Checks if this Client is the Server.
+     * @return True if this Client is a Server, False otherwise.
+     * @throws java.rmi.RemoteException
+     */
+    @Override
+    public boolean isServer() throws RemoteException {
         return isServer;
     }
 
-    public void setAsServer(boolean b) {
-        this.isServer = b;
+    /**
+     * Sets the Server flag Boolean for this Client.
+     * @param bool Server flag True or False
+     * @throws java.rmi.RemoteException
+     */
+    @Override
+    public void setAsServer(boolean bool) throws RemoteException {
+        this.isServer = bool;
     }
 
-    public RemoteObject getServer() {
+    /**
+     * Tries to retrieve the Server (Client) RemoteObject from the registry.
+     * @return The server RemoteObject
+     * @throws java.rmi.RemoteException
+     */
+    @Override
+    public RemoteObject getServer() throws RemoteException {
         try {
             server = (RemoteObject) registry.lookup("server");
         } catch (RemoteException | NotBoundException ex) {
-            // none
+            System.out.println("Oh-Oh the following error occured when trying " +
+                    "to get the server from getServer() : " + ex);
         }
         return server;
     }
 
+    @Override
     public void registerAsServer() {
         try {
             registry.rebind("server", this);
@@ -271,60 +394,46 @@ public final class Client extends UnicastRemoteObject implements RemoteObject  {
         }
     }
 
-//    @Override
-//    public Message getLastMessage(String uniqueID) throws RemoteException {
-//        if (messages.containsKey(uniqueID) && !messages.get(uniqueID).isEmpty()) {
-//            return messages.get(uniqueID).pop();
-//        } else {
-//            return null;
-//        }
-//    }
     /**
-     * Gets the latest message sent to this Client.
-     * @param uniqueID The unique ID of this Client.
-     * @return The latest message sent to this Client or null if none.
-     * @throws RemoteException Error if RMI Server unavailable.
+     * Gets the election electionParticipant boolean of this Client.
+     * @return Is election electionParticipant true or false.
+     * @throws java.rmi.RemoteException
      */
-//    @Override
-//    public Message getLastMessage(String uniqueID) throws RemoteException {
-//        if(messages.containsKey(uniqueID) && !messages.get(uniqueID).isEmpty())
-//            return messages.get(uniqueID).pop();
-//        else 
-//            return null;
-//        }
-
-    /**
-     * Gets the election participant boolean of this Client.
-     * @return Is election participant true or false.
-     */
-    public boolean isParticipant()
+    @Override
+    public boolean isElectionParticipant() throws RemoteException
     {
-        return participant;
+        return electionParticipant;
     }
 
     /**
-     * Sets the election participant boolean value.
-     * @param isParticipant Has this Client participated in an election true or false
+     * Sets the election electionParticipant boolean value.
+     * @param isParticipant Is this Client participating in an election true or false
+     * @throws java.rmi.RemoteException
      */
-    public void setParticipant(boolean isParticipant)
+    @Override
+    public void setElectionParticipant(boolean isParticipant) throws RemoteException
     {
-        this.participant = isParticipant;
+        this.electionParticipant = isParticipant;
     }
 
     /**
      * Gets the unique ID (UUID) of the leader (Server) of this Client.
      * @return the unique ID (UUID) String of the leader (Server)
+     * @throws java.rmi.RemoteException
      */
-    public String getLeaderID()
+    @Override
+    public String getLeaderID() throws RemoteException
     {
         return leaderID;
     }
 
     /**
      * Sets the unique ID (UUID) of the leader (Server) of this Client.
-     * @param leaderID This Client's Server UUID 
+     * @param leaderID This Client's Server UUID
+     * @throws java.rmi.RemoteException 
      */
-    public void setLeaderID(String leaderID)
+    @Override
+    public void setLeaderID(String leaderID) throws RemoteException
     {
         this.leaderID = leaderID;
     }

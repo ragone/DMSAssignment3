@@ -20,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -42,6 +43,7 @@ public class ClientGUI extends JFrame {
     private final JList clientsList;
     private Thread t;
     private ClientThread clientThread;
+    private final JLabel tokenLabel;
 
     public ClientGUI() throws RemoteException {
         super("Chatroom");
@@ -58,6 +60,7 @@ public class ClientGUI extends JFrame {
 
             @Override
             public void windowClosed(WindowEvent e) {
+                removeClient();
             }
 
             @Override
@@ -112,6 +115,8 @@ public class ClientGUI extends JFrame {
                                     Thread.sleep(100);
                                 }
                                 client.getServer().sendMessage(new Message(messageTextField.getText(), clientsList.getSelectedValuesList(), client.getUniqueID()));
+                                JOptionPane.showMessageDialog(gui,
+                                "Message sent to selected users!");
                                 client.setWantToken(false);
                                 client.setWaitingForToken(false);
                             } catch (RemoteException ex) {
@@ -126,7 +131,10 @@ public class ClientGUI extends JFrame {
         });
         loginPnl.add(sendMsgBtn);
 
-        loginPnl.add(new JLabel(""));
+        
+        tokenLabel = new JLabel("");
+        tokenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        loginPnl.add(tokenLabel);
 
         usernameTextField = new JTextField();
         loginPnl.add(usernameTextField);
@@ -194,7 +202,7 @@ public class ClientGUI extends JFrame {
         mainTextArea.setEnabled(false);
         mainTextArea.setLineWrap(true);
         mainPnl.add(scroll, BorderLayout.CENTER);
-        mainPnl.setBorder(BorderFactory.createTitledBorder("Chatarea"));
+        mainPnl.setBorder(BorderFactory.createTitledBorder("Chat"));
 
         add(mainPnl, BorderLayout.CENTER);
 
@@ -234,6 +242,7 @@ public class ClientGUI extends JFrame {
                 if (!client.getConnectedClients().isEmpty()) {
                     for (RemoteObject client : client.getConnectedClients()) {
                         client.setNewServer();
+                        break;
                     }
                 }
                 // startLeaderElection();
@@ -259,5 +268,19 @@ public class ClientGUI extends JFrame {
      */
     public JTextArea getMainTextArea() {
         return mainTextArea;
+    }
+
+    /**
+     * @return the loginPnl
+     */
+    public JPanel getLoginPnl() {
+        return loginPnl;
+    }
+
+    /**
+     * @return the tokenLabel
+     */
+    public JLabel getTokenLabel() {
+        return tokenLabel;
     }
 }

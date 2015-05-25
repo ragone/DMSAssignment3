@@ -94,6 +94,10 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
         clients = oldServer.getConnectedClients();
         oldServer.setServer(false);
 
+        if(oldServer.hasToken()) {
+            hasToken = true;
+        }
+        
         isServer = true;
         registerAsServer();
     }
@@ -125,8 +129,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
             if (message.getType() == Message.BROADCAST) {
                 for (Map.Entry<String, Integer> entrySet : getPorts().entrySet()) {
                     sendViaTcp(message.getTime() + getClientByID(message.getSender()).getUsername() + ": " + message.getContent(), entrySet.getValue());
-//                LinkedList<Message> value = entrySet.getValue();
-//                value.push(message);
                 }
             } else if (message.getType() == Message.PRIVATE_MESSAGE) {
                 List receiversList = message.getReceivers();
@@ -320,32 +322,6 @@ public final class Client extends UnicastRemoteObject implements RemoteObject {
         }
     }
 
-    public static void main(String[] args) throws RemoteException {
-        new Client();
-    }
-
-//    @Override
-//    public Message getLastMessage(String uniqueID) throws RemoteException {
-//        if (messages.containsKey(uniqueID) && !messages.get(uniqueID).isEmpty()) {
-//            return messages.get(uniqueID).pop();
-//        } else {
-//            return null;
-//        }
-//    }
-    /**
-     * Gets the latest message sent to this Client.
-     *
-     * @param uniqueID The unique ID of this Client.
-     * @return The latest message sent to this Client or null if none.
-     * @throws RemoteException Error if RMI Server unavailable.
-     */
-//    @Override
-//    public Message getLastMessage(String uniqueID) throws RemoteException {
-//        if(messages.containsKey(uniqueID) && !messages.get(uniqueID).isEmpty())
-//            return messages.get(uniqueID).pop();
-//        else 
-//            return null;
-//        }
     /**
      * Gets the election participant boolean of this Client.
      *

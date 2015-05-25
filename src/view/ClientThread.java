@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import model.Client;
 
 /**
@@ -56,7 +59,7 @@ public class ClientThread implements Runnable {
                     }
                     
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(10000);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -98,6 +101,18 @@ public class ClientThread implements Runnable {
                     HashMap clients = client.getServer().getClients();
                     gui.getClientsList().setListData(clients.values().toArray());
                     gui.getClientsList().setSelectedIndices(i);
+                    
+                    JLabel tokenLabel = gui.getTokenLabel();
+                    if(client.hasToken()) {
+                        tokenLabel.setText("Got token!");
+                        tokenLabel.setIcon(new ImageIcon(getClass().getResource("/res/token.png")));
+                    } else if(client.waitingForToken()) {
+                        tokenLabel.setText("Waiting for token");
+                        tokenLabel.setIcon(null);
+                    } else {
+                        tokenLabel.setText("No token");
+                        tokenLabel.setIcon(null);
+                    }
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
                 }

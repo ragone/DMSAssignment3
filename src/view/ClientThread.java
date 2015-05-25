@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.Client;
@@ -24,19 +26,12 @@ public class ClientThread implements Runnable {
 
     private ClientGUI gui;
     private Client client;
-    private boolean isRunning;
     final int port = 44827;
 
     public ClientThread(Client model, ClientGUI gui) {
         this.gui = gui;
         this.client = model;
-        isRunning = false;
     }
-
-    public void setRunning(boolean b) {
-        isRunning = b;
-    }
-
     
     /**
      * Tries to get the latest message sent to this Client (aka model)
@@ -45,6 +40,30 @@ public class ClientThread implements Runnable {
      */
     @Override
     public void run() {
+        // Start thread for token
+        new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                while(true) {
+                    try {
+                        if(client.hasToken() && !client.wantToken() && client.getNeighbour() != null) {
+                            client.getNeighbour().setHasToken(true);
+                            client.setHasToken(false);
+                        }
+                    } catch (RemoteException ex) {
+                        Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        }).start();
+        // Start thread for listening to incomming messages
         new Thread(new Runnable() {
             Socket clientSock;
             ServerSocket serverSock;
@@ -62,30 +81,23 @@ public class ClientThread implements Runnable {
                         try {
                             clientSock = serverSock.accept();
                             br = new BufferedReader(new InputStreamReader(clientSock.getInputStream()));
-                            gui.getMainTextArea().append(br.readLine() + "\n");
-    //
-    //                        br.close();
-    //                        serverSock.close();
-    //                        clientSock.close();
+                            String result = br.readLine();
+                            gui.getMainTextArea().append(result + "\n");
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                 }
             }
         }).start();
+        
+        // update gui
         while (true) {
             if (client.getUsername() != null) {
                 try {
                     int[] i = gui.getClientsList().getSelectedIndices();
-                    String[] clients = client.getServer().getClients();
-                    gui.getClientsList().setListData(clients);
+                    HashMap clients = client.getServer().getClients();
+                    gui.getClientsList().setListData(clients.values().toArray());
                     gui.getClientsList().setSelectedIndices(i);
-//
-//                    Message message = client.getServer().getLastMessage(client.getUniqueID());
-//                    if (message != null) {
-//                        RemoteObject sender = client.getServer().getClientByID(message.getSender());
-//                        gui.getMainTextArea().append(message.getTime() + sender.getUsername() + ": " + message.getContent() + "\n");
-//                    }
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
                 }

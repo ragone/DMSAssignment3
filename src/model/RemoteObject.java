@@ -14,10 +14,15 @@ public interface RemoteObject extends Remote {
     public RemoteObject getClientByID(String uniqueID) throws RemoteException;
     public void sendMessage(Message message) throws RemoteException;
     public void setNeighbour(RemoteObject neighbour) throws RemoteException;
+    public HashSet<RemoteObject> getClientsSet() throws RemoteException;
+    public void setClients(HashSet<RemoteObject> clients) throws RemoteException;
     public HashMap getClients() throws RemoteException;
     public RemoteObject getNeighbour() throws RemoteException;
     public String getUsername() throws RemoteException;
     public boolean isServer() throws RemoteException;
+    public RemoteObject getServer() throws RemoteException;
+    public void setAsServer(boolean bool) throws RemoteException;
+    public void registerAsServer() throws RemoteException;
     public int generatePort() throws RemoteException;
     public int getPort() throws RemoteException;
     public void setPort(int port) throws RemoteException;
@@ -29,4 +34,9 @@ public interface RemoteObject extends Remote {
     public boolean hasToken() throws RemoteException;
     public void setHasToken(boolean b) throws RemoteException;
     public RemoteObject getClientByUsername(String username) throws RemoteException;
+    public void setPorts(HashMap<String, Integer> ports) throws RemoteException;
+    public void setElectionParticipant(boolean isParticipant) throws RemoteException;
+    public boolean isElectionParticipant() throws RemoteException;
+    public void setLeaderID(String leaderID) throws RemoteException;
+    public String getLeaderID() throws RemoteException;
 }

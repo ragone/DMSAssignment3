@@ -28,6 +28,7 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import leaderelection.ChangRoberts;
 import model.Client;
 import model.Message;
 import model.RemoteObject;
@@ -55,12 +56,18 @@ public class ClientGUI extends JFrame {
         addWindowListener(new WindowListener() {
             @Override
             public void windowClosing(WindowEvent e) {
-                removeClient();
+                try
+                {
+                    removeClient();
+                }
+                catch (RemoteException ex)
+                {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
             @Override
             public void windowClosed(WindowEvent e) {
-                removeClient();
             }
 
             @Override
@@ -159,8 +166,8 @@ public class ClientGUI extends JFrame {
                 messageTextField.setEnabled(true);
                 usernameTextField.setEnabled(false);
                 getMainTextArea().setEnabled(true);
-                Message msg = new Message(" joined the chat", Message.BROADCAST, client.getUniqueID());
                 try {
+                    Message msg = new Message(" joined the chat", Message.BROADCAST, client.getUniqueID());
                     client.getServer().sendMessage(msg);
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
@@ -177,7 +184,14 @@ public class ClientGUI extends JFrame {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                removeClient();
+                try
+                {
+                    removeClient();
+                }
+                catch (RemoteException ex)
+                {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
         logoutBtn.setEnabled(false);
@@ -219,7 +233,7 @@ public class ClientGUI extends JFrame {
         new Thread(clientThread).start();
     }
 
-    public void removeClient() {
+    public void removeClient() throws RemoteException {
         logoutBtn.setEnabled(false);
         joinBtn.setEnabled(true);
         sendMsgBtn.setEnabled(false);

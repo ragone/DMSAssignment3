@@ -1,5 +1,6 @@
 package view;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -7,21 +8,20 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.RemoteException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import model.Client;
 
 /**
  * Represents a new Client process running on a separate thread on the system.
+ *
  * @author Alex
  * @modified jaimes 20150517 Moved Chang-Roberts leader election logic here.
  * @modified jaimes 20150518 Completed Chang-Roberts leader election algorithm.
- * @modified jaimes 20150520 Refactored Chang-Roberts leader election algorithm to
- * post messages to neighbours.
+ * @modified jaimes 20150520 Refactored Chang-Roberts leader election algorithm
+ * to post messages to neighbours.
  * @TODO Need to handle null neighbours?
  * @modified jaimes 20150522 Moved Chang-Roberts logic to ChangRoberts class.
  */
@@ -35,10 +35,10 @@ public class ClientThread implements Runnable {
         this.gui = gui;
         this.client = model;
     }
-    
+
     /**
-     * Tries to get the latest message sent to this Client (aka model)
-     * Adds message content to the GUI text field if there is a BROADCAST message.
+     * Tries to get the latest message sent to this Client (aka model) Adds
+     * message content to the GUI text field if there is a BROADCAST message.
      * Passes on leader election messages.
      */
     @Override
@@ -48,16 +48,16 @@ public class ClientThread implements Runnable {
 
             @Override
             public void run() {
-                while(true) {
+                while (true) {
                     try {
-                        if(client.hasToken() && !client.wantToken() && client.getNeighbour() != null) {
+                        if (client.hasToken() && !client.wantToken() && client.getNeighbour() != null) {
                             client.getNeighbour().setHasToken(true);
                             client.setHasToken(false);
                         }
                     } catch (RemoteException ex) {
                         Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    
+
                     try {
                         Thread.sleep(10000);
                     } catch (InterruptedException ex) {
@@ -71,7 +71,7 @@ public class ClientThread implements Runnable {
             Socket clientSock;
             ServerSocket serverSock;
             BufferedReader br;
-            
+
             @Override
             public void run() {
                 try {
@@ -79,20 +79,28 @@ public class ClientThread implements Runnable {
                 } catch (IOException ex) {
                     Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                
+
                 while (true) {
-                        try {
-                            clientSock = serverSock.accept();
-                            br = new BufferedReader(new InputStreamReader(clientSock.getInputStream()));
-                            String result = br.readLine();
-                            gui.getMainTextArea().append(result + "\n");
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                    //while(client.getUsername() != null) {
+                    try {
+                        clientSock = serverSock.accept();
+                        br = new BufferedReader(new InputStreamReader(clientSock.getInputStream()));
+                        String result = br.readLine();
+                        gui.getMainTextArea().append(result + "\n");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
+                //}
             }
         }).start();
-        
+
         // update gui
         while (true) {
             if (client.getUsername() != null) {
@@ -101,17 +109,27 @@ public class ClientThread implements Runnable {
                     HashMap clients = client.getServer().getClients();
                     gui.getClientsList().setListData(clients.values().toArray());
                     gui.getClientsList().setSelectedIndices(i);
-                    
+
                     JLabel tokenLabel = gui.getTokenLabel();
-                    if(client.hasToken()) {
-                        tokenLabel.setText("Got token!");
-                        tokenLabel.setIcon(new ImageIcon(getClass().getResource("/res/token.png")));
-                    } else if(client.waitingForToken()) {
-                        tokenLabel.setText("Waiting for token");
-                        tokenLabel.setIcon(null);
+                    
+                    if(client.isServer()) {
+                        tokenLabel.setText("Acting server");
                     } else {
-                        tokenLabel.setText("No token");
-                        tokenLabel.setIcon(null);
+                        tokenLabel.setText("");
+                    }
+                    
+                    if (client.hasToken()) {
+                        gui.getHeader().setForeground(Color.GREEN);
+//                        tokenLabel.setText("Got token!");
+//                        tokenLabel.setIcon(new ImageIcon(getClass().getResource("/res/token.png")));
+                    } else if (client.waitingForToken()) {
+//                        tokenLabel.setText("Waiting for token");
+//                        tokenLabel.setIcon(null);
+                        gui.getHeader().setForeground(Color.YELLOW);
+                    } else {
+//                        tokenLabel.setText("No token");
+//                        tokenLabel.setIcon(null);
+                        gui.getHeader().setForeground(Color.RED);
                     }
                 } catch (RemoteException ex) {
                     Logger.getLogger(ClientThread.class.getName()).log(Level.SEVERE, null, ex);

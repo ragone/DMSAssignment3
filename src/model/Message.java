@@ -14,9 +14,7 @@ import java.util.List;
  */
 public class Message implements Serializable {
     public static int BROADCAST = 1;
-    public static int ELECTION = 2; // for Chang Roberts leader election
-    public static int LEADER = 3; // for Chang Roberts leader election
-    public static int PRIVATE_MESSAGE = 4;
+    public static int PRIVATE_MESSAGE = 2;
     
     private int type;
     private String content;
@@ -25,9 +23,6 @@ public class Message implements Serializable {
     private String sender;
     private String receiver;
 
-    
-
-    //private Date date;
 
     /**
      * Constructor for a message object which can be distributed around

@@ -28,7 +28,7 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
-import leaderelection.ChangRoberts;
+import model.ChangRoberts;
 import model.Client;
 import model.Message;
 import model.RemoteObject;
@@ -45,6 +45,7 @@ public class ClientGUI extends JFrame {
     private Thread t;
     private ClientThread clientThread;
     private final JLabel tokenLabel;
+    private final JLabel header;
 
     public ClientGUI() throws RemoteException {
         super("Chatroom");
@@ -220,9 +221,9 @@ public class ClientGUI extends JFrame {
 
         add(mainPnl, BorderLayout.CENTER);
 
-        JLabel header = new JLabel("CHATROOM");
+        header = new JLabel("CHATROOM");
         header.setFont(new Font("Verdana", Font.BOLD, 60));
-        header.setForeground(Color.DARK_GRAY);
+        header.setForeground(Color.RED);
         header.setHorizontalAlignment(SwingConstants.CENTER);
 
         add(header, BorderLayout.NORTH);
@@ -251,18 +252,18 @@ public class ClientGUI extends JFrame {
         } catch (RemoteException ex) {
             Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
-        if (client.isServer()) {
-            try {
-                if (!client.getConnectedClients().isEmpty()) {
-                    for (RemoteObject client : client.getConnectedClients()) {
-                        client.setNewServer();
-                        break;
+        if (client.isServer() && !client.getConnectedClients().isEmpty()) {
+            new Thread(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        new ChangRoberts(client.getNeighbour());
+                    } catch (RemoteException ex) {
+                        Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
-                // startLeaderElection();
-            } catch (RemoteException ex) {
-                Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            }).start();
         }
     }
 
@@ -296,5 +297,12 @@ public class ClientGUI extends JFrame {
      */
     public JLabel getTokenLabel() {
         return tokenLabel;
+    }
+
+    /**
+     * @return the header
+     */
+    public JLabel getHeader() {
+        return header;
     }
 }
